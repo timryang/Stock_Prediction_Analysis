@@ -8,6 +8,8 @@ Created on Sat May  9 19:38:49 2020
 # tweets used to generate a Naive Bayes machine learning model to predict next
 # day's stock performance. An example of using the class is shown in the "main"
 
+# Script developed using Python 3.7
+
 #%% Import all necessary libraries
 import GetOldTweets3 as got
 from nltk.corpus import stopwords
@@ -151,11 +153,14 @@ class stock_NB_Tweet_Analyzer:
         # Takes user input (stopwordsList) to ignore words in the list - set to None to use all
         self.count_vect_ = CountVectorizer(stop_words = stopwordsList)
         train_counts = self.count_vect_.fit_transform(tweetTxtTrain)
-        # Normalizes word counts by term frequency within document
-        # Takes user input (useIDF) to decide whether to account inverse document frequency
+        # Normalizes word counts by word frequency within each tweet
+        # Takes user input (useIDF) to give less weight to
+        # highly frequent terms across all tweets if true
         self.tfTransformer_ = TfidfTransformer(use_idf = useIDF)
         train_tf = self.tfTransformer_.fit_transform(train_counts)
         # Create multinomial Naive Bayes model (binomial in this case) using historical data
+        # argmax_y(P(y|xi..xn) = P(xi|y)*...*P(xn|y(*P(y))
+        # y is [negative, positive], xi is each word within all tweets
         self.clf_ = MultinomialNB().fit(train_tf, resultsTrain)
         # Test model and print accuracy given historical data
         test_tf = transform_text(tweetTxtTest, self.count_vect_, self.tfTransformer_)
@@ -178,10 +183,12 @@ class stock_NB_Tweet_Analyzer:
         label_one2two = classes[0] + ':' + classes[1] 
         label_two2one = classes[1] + ':' + classes[0]
         # Print total tweets occurring in each label
-        print("\n" + classes[0] + " total: " + str(self.clf_.class_count_[0]))
-        print(classes[1] + " total: " + str(self.clf_.class_count_[1]))
+        print("\nTotal" + classes[0] + " tweets: " + str(self.clf_.class_count_[0]))
+        print("Total " + classes[1] + " tweets: " + str(self.clf_.class_count_[1]))
         # Print dictionary with ratio results - this indicates the most "informative" words
         self.ratio_dict_ = {label_one2two: top_one2two, label_two2one: top_two2one}
+        print("\nBelow printout gives the most informative words.")
+        print("Example -> negative:positive: (gain, 3.0) indicates that the word, gain, is 3.0 times more likely to appear in a neg tweet vs pos tweet.\n")
         print(self.ratio_dict_)
 
     def predict(self, txtSearch, numTestMaxTweets, topTestTweets, printAll):
@@ -196,7 +203,7 @@ class stock_NB_Tweet_Analyzer:
                 print("\nPrediction: " + prediction)
         numNeg = list(self.predictions_).count('negative')
         numPos = list(self.predictions_).count('positive')
-        print("Ratio of negative to positve: " + str(numNeg) + '/' + str(numPos))
+        print("\nRatio of negative to positve tweets: " + str(numNeg) + '/' + str(numPos))
     
     
 #%% Main Code As Example
