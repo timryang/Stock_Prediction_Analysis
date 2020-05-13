@@ -183,7 +183,7 @@ class stock_NB_Tweet_Analyzer:
         label_one2two = classes[0] + ':' + classes[1] 
         label_two2one = classes[1] + ':' + classes[0]
         # Print total tweets occurring in each label
-        print("\nTotal" + classes[0] + " tweets: " + str(self.clf_.class_count_[0]))
+        print("\nTotal " + classes[0] + " tweets: " + str(self.clf_.class_count_[0]))
         print("Total " + classes[1] + " tweets: " + str(self.clf_.class_count_[1]))
         # Print dictionary with ratio results - this indicates the most "informative" words
         self.ratio_dict_ = {label_one2two: top_one2two, label_two2one: top_two2one}
