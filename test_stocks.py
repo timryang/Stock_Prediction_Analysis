@@ -31,6 +31,7 @@ useIDF = True # Apply less weighting to highly frequent words across tweets
 # Parameter to analyze model data
 plotRetweets = True # Plot distribution of retweets if true
 plotCloseData = True # Plot stock close price over time if true
+plotDeltaClose = True # Plot change in stock price
 numFeatures = 10 # Number of words to display to shows it's "informativeness"
 
 # Parameters to gather tweets to predict stock performance
@@ -44,8 +45,10 @@ printAll = False # Print each tweet and resulting prediction if true
 stockAnalyzer = stock_NB_Tweet_Analyzer(stockData)
 
 # Collect Historical Tweets
-stockAnalyzer.collect_tweets(classifyTxtSearch, classifyStartDate, classifyStopDate,\
-                            classifyNumMaxTweets, classifyTopTweets)
+stockAnalyzer.collect_tweets(classifyTxtSearch, startDate = classifyStartDate,\
+                             stopDate = classifyStopDate,\
+                                    numMaxTweets = classifyNumMaxTweets,\
+                                        topTweets = classifyTopTweets)
 
 # Correlate Historical Tweets to Stock Performance
 stockAnalyzer.correlate_tweets()
@@ -54,7 +57,7 @@ stockAnalyzer.correlate_tweets()
 stockAnalyzer.create_classifier(trainSize, stopwordsList, useIDF)
 
 # Analyze Classifier Data
-stockAnalyzer.plot_tweet_data(retweets = plotRetweets, closeData = plotCloseData)
+stockAnalyzer.plot_tweet_data(retweets = plotRetweets, closeData = plotCloseData, deltaClose = plotDeltaClose)
 stockAnalyzer.show_most_informative(n = numFeatures)
 
 # Create Prediction from New Tweets

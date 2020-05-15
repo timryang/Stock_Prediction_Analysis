@@ -17,6 +17,7 @@ from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
 import datetime
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
@@ -24,6 +25,9 @@ from sklearn.naive_bayes import MultinomialNB
 from operator import itemgetter
 
 #%% Functions
+
+def find_idx(inputList, condition):
+    return [idx for idx, val in enumerate(inputList) if val == condition]
 
 def date_check(stockData):
     # Confirms that all dates within stock data csv file are unique
@@ -40,18 +44,34 @@ def transform_text(text, count_vect, tfTransformer):
     tf_text = tfTransformer.transform(count_text)
     return tf_text
 
-def get_tweets(txtSearch, startDate = None, stopDate = None, numMaxTweets = 10, topTweets = True):
+def get_tweets(txtSearch, startDate = None, stopDate = None, geoLocation = None,\
+               distance = None, topTweets = True, numMaxTweets = 10):
     # Using open source library (got) to collect tweets based on criteria
     # Returns tweets in DataFrame format consisting of Date, Text, # of Retweets
-    if (startDate == None and stopDate == None):
+    if (startDate == None and geoLocation == None):
         tweetCriteria = got.manager.TweetCriteria().setQuerySearch(txtSearch)\
-                                                .setMaxTweets(numMaxTweets)\
-                                                .setTopTweets(topTweets)
+                                                .setTopTweets(topTweets)\
+                                                .setMaxTweets(numMaxTweets)
+    elif (geoLocation == None and startDate != None):
+        tweetCriteria = got.manager.TweetCriteria().setSince(startDate)\
+                                                .setUntil(stopDate)\
+                                                .setQuerySearch(txtSearch)\
+                                                .setTopTweets(topTweets)\
+                                                .setMaxTweets(numMaxTweets)
+    elif (startDate == None and geoLocation != None):
+        tweetCriteria = got.manager.TweetCriteria().setNear(geoLocation)\
+                                                .setWithin(distance)\
+                                                .setQuerySearch(txtSearch)\
+                                                .setTopTweets(topTweets)\
+                                                .setMaxTweets(numMaxTweets)
     else:
-        tweetCriteria = got.manager.TweetCriteria().setQuerySearch(txtSearch)\
-                                                .setSince(startDate).setUntil(stopDate)\
-                                                .setMaxTweets(numMaxTweets)\
-                                                .setTopTweets(topTweets)
+        tweetCriteria = got.manager.TweetCriteria().setSince(startDate)\
+                                                .setUntil(stopDate)\
+                                                .setNear(geoLocation)\
+                                                .setWithin(distance)\
+                                                .setQuerySearch(txtSearch)\
+                                                .setTopTweets(topTweets)\
+                                                .setMaxTweets(numMaxTweets)
     tweets = got.manager.TweetManager.getTweets(tweetCriteria)
     tweetsParsed = [[tweet.date, tweet.text, tweet.retweets] for tweet in tweets]
     tweetsDF = pd.DataFrame(tweetsParsed, columns = ['Date', 'Text', 'Retweets'])
@@ -83,10 +103,16 @@ class stock_NB_Tweet_Analyzer:
         self.predictTweets_ = pd.DataFrame()
         self.predictions_ = np.array([])
         
-    def collect_tweets(self, txtSearch, startDate = None, stopDate = None, numMaxTweets = 10, topTweets = True):
-        self.classifierTweets_ = get_tweets(txtSearch, startDate = startDate, stopDate = stopDate, numMaxTweets = numMaxTweets, topTweets = topTweets)
+    def collect_tweets(self, txtSearch, startDate = None, stopDate = None,\
+                       geoLocation = None, distance = None, topTweets = True,\
+                           numMaxTweets = 10):
+        self.classifierTweets_ = get_tweets(txtSearch, startDate, stopDate,\
+                                                geoLocation, distance,\
+                                                    topTweets, numMaxTweets)
+        self.totalTweets_ = list(self.classifierTweets_['Text']) # Store text in list
 
-    def plot_tweet_data(self, retweets = True, closeData = True):
+    def plot_tweet_data(self, retweets = True, closeData = True, deltaClose = True):
+        dates = pd.to_datetime(self.stockData_['Date'])
         if retweets:
             # Show distribution of tweets by # of retweets
             plt.hist(list(self.classifierTweets_['Retweets']), bins = range(self.classifierTweets_['Retweets'].max()))
@@ -96,51 +122,61 @@ class stock_NB_Tweet_Analyzer:
             plt.show()
         if closeData:
             # Plot historical close data over entire dataset
-            dates = np.array(self.stockData_['Date'])
-            closeData = np.array(self.stockData_['Close'])
-            plt.plot(dates, closeData)
+            ax = plt.gca()
+            formatter = mdates.DateFormatter("%m-%d")
+            ax.xaxis.set_major_formatter(formatter)
+            locator = mdates.DayLocator(bymonthday = [1, 15])
+            ax.xaxis.set_major_locator(locator)
+            plt.plot_date(dates, self.stockData_['Close'].values, '-')
             plt.title('Daily Close Performance')
             plt.xlabel('Date')
             plt.ylabel('Price')
+            plt.xticks(rotation = 70)
             plt.show()
-
+        if deltaClose:
+            # Plot historical delta close data
+            deltaClose = np.diff(self.stockData_['Close'].values)
+            ax = plt.gca()
+            formatter = mdates.DateFormatter("%m-%d")
+            ax.xaxis.set_major_formatter(formatter)
+            locator = mdates.DayLocator(bymonthday = [1, 15])
+            ax.xaxis.set_major_locator(locator)
+            plt.plot_date(dates[:-1], deltaClose, '-')
+            plt.title('Daily Change Performance')
+            plt.xlabel('Date')
+            plt.ylabel('Change')
+            plt.xticks(rotation = 70)
+            plt.show()
+            
     def correlate_tweets(self):
         # Correlate each tweet to the next day's stock performance
-        for idx in range(len(self.classifierTweets_)):
-            tweetDate = self.classifierTweets_['Date'][idx].date()
-            tweetTxt = self.classifierTweets_['Text'][idx]
+        
+        tweetDatesAll = [dt.date() for dt in self.classifierTweets_['Date']]
+        stockDates = list(self.stockData_['Date'])
+        deltaClose = np.diff(self.stockData_['Close'].values)
+        resultsClose = np.where(deltaClose > 0, 'positive', 'negative')
+        for idx, tweetDate in enumerate(tweetDatesAll):
             # Check if the day of tweet and the next day is a weekday
             # (No stock data on weekends)
             if tweetDate.weekday() >= 4:
                 # If not, tweet day is correlated to the nearest previous workday
                 # And next day is correlated to the nearest next workday
                 currentStockDay = tweetDate - datetime.timedelta(days = (tweetDate.weekday() - 4))
-                nextStockDay = tweetDate + datetime.timedelta(days = (7 - tweetDate.weekday()))
             else:
                 currentStockDay = tweetDate
-                nextStockDay = tweetDate + datetime.timedelta(days = 1)
             currentStockDayStr = str(currentStockDay)
-            nextStockDayStr = str(nextStockDay)
             # While loop accounts for tweets that fall on a weekday holiday
             # (No stock data on holidays)
-            while currentStockDayStr not in (self.stockData_.Date).tolist():
+            while currentStockDayStr not in stockDates:
                 print("Current date, " + currentStockDayStr + " was not found. Decrementing...")
                 currentStockDay = currentStockDay - datetime.timedelta(days = 1)
                 currentStockDayStr = str(currentStockDay)
-            # Get stock closing price corresponding to the date of the tweet
-            currentClose = ((self.stockData_['Close'][self.stockData_.Date == currentStockDayStr]).tolist())[0]
-            while nextStockDayStr not in (self.stockData_.Date).tolist():
-                print("Next date, " + nextStockDayStr + " was not found. Incrementing...")
-                nextStockDay = nextStockDay + datetime.timedelta(days = 1)
-                nextStockDayStr = str(nextStockDay)
-            # Get stock closing price corresponding to the next day
-            nextClose = ((self.stockData_['Close'][self.stockData_.Date == nextStockDayStr]).tolist())[0]
-            self.totalTweets_.append(tweetTxt) # Store all tweets in a list
-            # Store corresponding stock performance in another list
-            if nextClose > currentClose:
-                self.totalResults_.append('positive')
-            else:
-                self.totalResults_.append('negative')       
+            # Get price change
+            result = resultsClose[find_idx(stockDates, currentStockDayStr)]
+            # Store corresponding stock performance in list
+            self.totalResults_.append(result[0])
+        print("Total positive tweets: " + str(self.totalResults_.count('positive')))
+        print("Total negative tweets: " + str(self.totalResults_.count('negative')))
     
     def create_classifier(self, trainSize, stopwordsList, useIDF):
         # Creates the ML algorithm based on tweets / corresponding stock data
@@ -168,6 +204,7 @@ class stock_NB_Tweet_Analyzer:
 
     def show_most_informative(self, n = 10):
         # Shows statistics on the historical data used to generate ML model
+        
         classes = self.clf_.classes_
         features = self.count_vect_.get_feature_names()
         # Get P(word|outcome) for every word and outcome
@@ -182,17 +219,18 @@ class stock_NB_Tweet_Analyzer:
         # Get outcome labels
         label_one2two = classes[0] + ':' + classes[1] 
         label_two2one = classes[1] + ':' + classes[0]
-        # Print total tweets occurring in each label
-        print("\nTotal " + classes[0] + " tweets: " + str(self.clf_.class_count_[0]))
-        print("Total " + classes[1] + " tweets: " + str(self.clf_.class_count_[1]))
         # Print dictionary with ratio results - this indicates the most "informative" words
         self.ratio_dict_ = {label_one2two: top_one2two, label_two2one: top_two2one}
         print("\nBelow printout gives the most informative words.")
-        print("Example -> negative:positive: (gain, 3.0) indicates that the word, gain, is 3.0 times more likely to appear in a neg tweet vs pos tweet.\n")
-        print(self.ratio_dict_)
+        print("Example -> neg:pos: (gain, 3.0) indicates the word, gain,"\
+              + "is 3.0x more likely to appear in a neg tweet vs pos tweet.\n")
+        print("{:<20s} {:<20s}".format(label_one2two, label_two2one))
+        for one, two in zip(top_one2two, top_two2one):
+            print("{:<25s} {:<25s}".format(str(one), str(two)))
 
     def predict(self, txtSearch, numTestMaxTweets, topTestTweets, printAll):
         # Get a new set of recent tweets and predict next stock day's performance
+        
         self.predictTweets_ = get_tweets(txtSearch, numMaxTweets = numTestMaxTweets, topTweets = topTestTweets)
         tf_text = transform_text(self.predictTweets_.Text, self.count_vect_, self.tfTransformer_)
         self.predictions_ = self.clf_.predict(tf_text)
@@ -203,7 +241,13 @@ class stock_NB_Tweet_Analyzer:
                 print("\nPrediction: " + prediction)
         numNeg = list(self.predictions_).count('negative')
         numPos = list(self.predictions_).count('positive')
-        print("\nRatio of negative to positve tweets: " + str(numNeg) + '/' + str(numPos))
+        print("\nRatio of predicted tweets (pos/neg): " + str(numPos) + '/' + str(numNeg))
+        if (numPos/(numNeg+numPos)) > 0.75:
+            print("Consider investing...")
+        elif (numNeg/(numNeg+numPos)) > 0.75:
+            print("Don't think you should invest...")
+        else:
+            print("Too wishy washy... Evaluate more indicators")
     
     
 #%% Main Code As Example
