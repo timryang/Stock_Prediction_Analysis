@@ -12,7 +12,6 @@ Created on Sat May  9 19:38:49 2020
 
 #%% Import all necessary libraries
 import GetOldTweets3 as got
-from nltk.corpus import stopwords
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
