@@ -224,7 +224,7 @@ class stock_NB_Tweet_Analyzer:
         print("\nBelow printout gives the most informative words.")
         print("Example -> neg:pos: (gain, 3.0) indicates the word, gain,"\
               + "is 3.0x more likely to appear in a neg tweet vs pos tweet.\n")
-        print("{:<20s} {:<20s}".format(label_one2two, label_two2one))
+        print("{:<25s} {:<25s}".format(label_one2two, label_two2one))
         for one, two in zip(top_one2two, top_two2one):
             print("{:<25s} {:<25s}".format(str(one), str(two)))
 
