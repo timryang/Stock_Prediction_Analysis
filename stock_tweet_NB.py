@@ -21,7 +21,10 @@ import datetime
 from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.feature_extraction.text import TfidfTransformer
 from sklearn.naive_bayes import MultinomialNB
+from sklearn.metrics import classification_report
+from sklearn.metrics import plot_confusion_matrix
 from operator import itemgetter
+import time
 
 #%% Functions
 
@@ -82,13 +85,18 @@ def get_tweets(txtSearch, startDate = None, stopDate = None, geoLocation = None,
 
 class stock_NB_Tweet_Analyzer:
     
-    def __init__(self, stockData):
+    def __init__(self, ticker):
         # Load historical stock data in csv format
         # Expected format is from Yahoo's historical stock price data
         # An example csv can be downloaded here:
         # https://finance.yahoo.com/quote/TSLA/history?p=TSLA
         
         # Confirm all dates are unique in historical stock data
+        oneYearUnix = 31536000
+        tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
+            + "?period1=" + str(int(time.time())-oneYearUnix) + "&period2="\
+                + str(int(time.time())) + "&interval=1d&events=history"
+        stockData = pd.read_csv(tempLink)
         date_check(stockData)
         # Initialize variables
         self.stockData_ = stockData
@@ -101,6 +109,7 @@ class stock_NB_Tweet_Analyzer:
         self.ratio_dict_ = {}
         self.predictTweets_ = pd.DataFrame()
         self.predictions_ = np.array([])
+        self.classifier_report_ = {}
         
     def collect_tweets(self, txtSearch, startDate = None, stopDate = None,\
                        geoLocation = None, distance = None, topTweets = True,\
@@ -154,6 +163,11 @@ class stock_NB_Tweet_Analyzer:
         stockDates = list(self.stockData_['Date'])
         deltaClose = np.diff(self.stockData_['Close'].values)
         resultsClose = np.where(deltaClose > 0, 'positive', 'negative')
+        numPosDays = list(resultsClose).count('positive')
+        numNegDays = list(resultsClose).count('negative')
+        print("Total positive days: " + str(numPosDays))
+        print("Total negative days: " + str(numNegDays))
+        print("Percent positive days: %0.2f" % (numPosDays/(numNegDays + numPosDays)*100))
         for idx, tweetDate in enumerate(tweetDatesAll):
             # Check if the day of tweet and the next day is a weekday
             # (No stock data on weekends)
@@ -167,15 +181,18 @@ class stock_NB_Tweet_Analyzer:
             # While loop accounts for tweets that fall on a weekday holiday
             # (No stock data on holidays)
             while currentStockDayStr not in stockDates:
-                print("Current date, " + currentStockDayStr + " was not found. Decrementing...")
+                # print("Current date, " + currentStockDayStr + " was not found. Decrementing...")
                 currentStockDay = currentStockDay - datetime.timedelta(days = 1)
                 currentStockDayStr = str(currentStockDay)
             # Get price change
             result = resultsClose[find_idx(stockDates, currentStockDayStr)]
             # Store corresponding stock performance in list
             self.totalResults_.append(result[0])
-        print("Total positive tweets: " + str(self.totalResults_.count('positive')))
-        print("Total negative tweets: " + str(self.totalResults_.count('negative')))
+        numPosTweets = self.totalResults_.count('positive')
+        numNegTweets = self.totalResults_.count('negative')
+        print("Total positive tweets: " + str(numPosTweets))
+        print("Total negative tweets: " + str(numNegTweets))
+        print("Percent positive tweets: %0.2f" % (numPosTweets/(numNegTweets + numPosTweets)*100))
     
     def create_classifier(self, trainSize, stopwordsList, useIDF):
         # Creates the ML algorithm based on tweets / corresponding stock data
@@ -197,9 +214,23 @@ class stock_NB_Tweet_Analyzer:
         # argmax_y(P(y|xi..xn) = P(xi|y)*...*P(xn|y(*P(y))
         # y is [negative, positive], xi is each word within all tweets
         self.clf_ = MultinomialNB().fit(train_tf, resultsTrain)
-        # Test model and print accuracy given historical data
+        
+        # Test model and print metrics given historical data
+        # Create predicted results
         test_tf = transform_text(tweetTxtTest, self.count_vect_, self.tfTransformer_)
-        print("Accuracy: %0.2f" % (self.clf_.score(test_tf, resultsTest)*100))
+        predictedResults = self.clf_.predict(test_tf)
+        # Give model metrics
+        classNames = self.clf_.classes_
+        self.classifier_report_ = classification_report(resultsTest, predictedResults, labels = classNames)
+        print("\nModel results: ")
+        print(self.classifier_report_)
+        # Give confusion matrix
+        disp = plot_confusion_matrix(self.clf_, test_tf, resultsTest,
+                                 display_labels=classNames,
+                                 cmap=plt.cm.Blues)
+        title = 'Confusion Matrix'
+        disp.ax_.set_title(title)
+        plt.show()
 
     def show_most_informative(self, n = 10):
         # Shows statistics on the historical data used to generate ML model
@@ -222,10 +253,10 @@ class stock_NB_Tweet_Analyzer:
         self.ratio_dict_ = {label_one2two: top_one2two, label_two2one: top_two2one}
         print("\nBelow printout gives the most informative words.")
         print("Example -> neg:pos: ('gain', 3.0) indicates 'gain'"\
-              + "is 3.0x more likely to appear in a neg tweet vs pos tweet.\n")
+              + " is 3.0x more likely to appear in a neg tweet vs pos tweet.\n")
         print("{:<25s} {:<25s}".format(label_one2two, label_two2one))
         for one, two in zip(top_one2two, top_two2one):
-            print("{:<25s} {:<25s}".format(str(one), str(two)))
+            print("{:<25s} {:<25s}".format(str(one), str(two)))        
 
     def predict(self, txtSearch, numTestMaxTweets, topTestTweets, printAll):
         # Get a new set of recent tweets and predict next stock day's performance

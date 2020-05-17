@@ -13,14 +13,15 @@ from nltk.corpus import stopwords
 
 #%% User Inputs:
 
-# Load stock history in csv format. This can be found on yahoo finance webpage
-stockData = pd.read_csv('./CSV_Files/MRNA.csv')
+# Give ticker symbol for company under analysis
+ticker = 'MRNA'
 
 # Parameters to gather tweets to build model
+# Currently supports one year history
 classifyTxtSearch = 'MRNA' # Search query
 classifyNumMaxTweets = 0 # Set to zero to gather all tweets
 classifyStartDate = '2020-03-01'
-classifyStopDate = '2020-04-30'
+classifyStopDate = '2020-05-14'
 classifyTopTweets = True # Gather top tweets if true (all tweets if false)
 
 # Parameter to adjust model creation
@@ -42,7 +43,7 @@ printAll = False # Print each tweet and resulting prediction if true
 
 #%% Everyting below executes using the inputs above
 # Create Analyzer
-stockAnalyzer = stock_NB_Tweet_Analyzer(stockData)
+stockAnalyzer = stock_NB_Tweet_Analyzer(ticker)
 
 # Collect Historical Tweets
 stockAnalyzer.collect_tweets(classifyTxtSearch, startDate = classifyStartDate,\
