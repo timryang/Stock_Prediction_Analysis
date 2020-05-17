@@ -96,7 +96,10 @@ class stock_NB_Tweet_Analyzer:
         tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
             + "?period1=" + str(int(time.time())-oneYearUnix) + "&period2="\
                 + str(int(time.time())) + "&interval=1d&events=history"
-        stockData = pd.read_csv(tempLink)
+        try:
+            stockData = pd.read_csv(tempLink)
+        except:
+            raise ValueError("Bad link: Double check your ticker")
         date_check(stockData)
         # Initialize variables
         self.stockData_ = stockData
