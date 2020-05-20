@@ -8,7 +8,6 @@ Created on Sun May 10 19:08:39 2020
 # stock_tweet_NB
 
 from stock_tweet_NB import stock_NB_Tweet_Analyzer
-import pandas as pd
 from nltk.corpus import stopwords
 
 #%% User Inputs:
