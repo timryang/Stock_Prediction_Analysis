@@ -24,7 +24,10 @@ class Stock_NB_Analyzer:
                               topTweets = topTweets, numMaxTweets = maxTweets)
     
     def load_tweets(self, directory):
-        self.tweetsDF_ = pd.read_csv(directory)
+        if isinstance(directory, pd.DataFrame):
+            self.tweetsDF_ = directory
+        else:
+            self.tweetsDF_ = pd.read_csv(directory)
         
     def collect_data(self, ticker, years):
         oneYearUnix = 31536000
@@ -38,7 +41,10 @@ class Stock_NB_Analyzer:
         self.stockData_ = stockData
         
     def load_data(self, directory):
-        self.stockData_ = pd.read_csv(directory)
+        if isinstance(directory, pd.DataFrame):
+            self.stockData_ = directory
+        else:
+            self.stockData_ = pd.read_csv(directory)
         
     def correlate_tweets(self, deltaInterval):
         
@@ -47,7 +53,7 @@ class Stock_NB_Analyzer:
         stockDates = list(self.stockData_['Date'])
         stockDates = stockDates[:-deltaInterval]
         
-        resultsClose = np.where(np.array(diffInterval) > 0, 'positive', 'negative')
+        resultsClose = np.where(np.array(diffInterval) > 0, 'Positive', 'Negative')
         
         lastDate = pd.to_datetime(stockDates[-1])
         tweetDatesAll = [dt.date() for dt in pd.to_datetime(self.tweetsDF_['Date'])]
@@ -68,43 +74,48 @@ class Stock_NB_Analyzer:
             result = resultsClose[find_idx(stockDates, currentStockDayStr)]
             tweetResults.append(result[0])
             
-        numPosDays = list(resultsClose).count('positive')
-        numNegDays = list(resultsClose).count('negative')
-        print("\nTotal positive days: " + str(numPosDays))
-        print("Total negative days: " + str(numNegDays))
-        print("Percent positive days: %0.2f" % (numPosDays/(numNegDays + numPosDays)*100))
+        numPosDays = list(resultsClose).count('Positive')
+        numNegDays = list(resultsClose).count('Negative')
         
-        numPosTweets = tweetResults.count('positive')
-        numNegTweets = tweetResults.count('negative')
-        print("\nTotal positive tweets: " + str(numPosTweets))
-        print("Total negative tweets: " + str(numNegTweets))
-        print("Percent positive tweets: %0.2f" % (numPosTweets/(numNegTweets + numPosTweets)*100))
+        numPosTweets = tweetResults.count('Positive')
+        numNegTweets = tweetResults.count('Negative')
+        
+        count_report = "Total Positive Days: " + str(numPosDays) +\
+            "\nTotal Negative Days: " + str(numNegDays) +\
+                "\nPerc Positive Days: %0.2f" % (numPosDays/(numNegDays + numPosDays)*100) +\
+                    "\n\nTotal Positive Tweets: " + str(numPosTweets) +\
+                        "\nTotal Negative Tweets: " + str(numNegTweets) +\
+                            "\nPerc Positive Tweets: %0.2f" % (numPosTweets/(numNegTweets + numPosTweets)*100)
+        print(count_report)
         
         self.tweetResults_ = tweetResults
         self.tweetsDF_ = tweetsDF_short
         
-        return tweetResults, tweetsDF_short
+        return count_report
         
-    def create_classifier(self, trainSize, stopwordsList, useIDF, do_downsample, do_stat, numFeatures):
+    def create_classifier(self, trainSize, stopwordsList, useIDF, do_downsample, do_stat, numFeatures, doHTML=False):
         totalTweets = list(self.tweetsDF_['Text'])
-        self.clf_, self.count_vect_, self.tfTransformer_\
+        self.clf_, self.count_vect_, self.tfTransformer_, report, most_inform, p\
         = create_NB_text_classifier(totalTweets, self.tweetResults_, trainSize, stopwordsList,\
                                     useIDF, do_downsample=do_downsample,
-                                    do_stat=do_stat, n_features=numFeatures)
+                                    do_stat=do_stat, n_features=numFeatures, doHTML=doHTML)
+        return report, most_inform, p
             
     def run_prediction(self, geoLocation, distance, txtSearch, numMaxTweets, topTweets, printAll):
-        predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
+        result = predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
             txtSearch, geoLocation, distance, numMaxTweets,\
                 topTweets, printAll)
+        return result
     
-    def plot_data(self, deltaInterval):
+    def plot_data(self, deltaInterval, isBokeh=False):
+        
+        unique_tweet_dates, num_daily_tweets = count_tweets_by_day(self.tweetsDF_)
+        unique_tweet_dates = pd.to_datetime(unique_tweet_dates)
+        
         dates = pd.to_datetime(self.stockData_['Date'])
         
-        plt.hist(list(self.tweetsDF_['Retweets']), bins = range(self.tweetsDF_['Retweets'].max()))
-        plt.title('Distribution of Retweets')
-        plt.xlabel('# of Retweets')
-        plt.ylabel('Occurences')
-        plt.show()
+        p_hist = plot_hist(self.tweetsDF_['Retweets'].values, title='Distribution of Retweets',\
+                           x_label='# of Retweets', y_label='Occurences', isBokeh=isBokeh)
         
         stockClose = self.stockData_['Close'].values
         
@@ -113,9 +124,9 @@ class Stock_NB_Analyzer:
         diffInterval = [stockClose[i+deltaInterval]-val for i, val in enumerate(stockClose[:-deltaInterval])]
         diffIntDates = dates[:-deltaInterval]
         
-        x_values_plt1 = [dates]
-        y_values_plt1 = [stockClose]
-        labels_plt1 = ['Close Data']
+        x_values_plt1 = [dates, unique_tweet_dates]
+        y_values_plt1 = [stockClose, num_daily_tweets]
+        labels_plt1 = ['Close Data', 'Tweets']
         title_plt1 = 'Daily Close'
         xlabel_plt1 = 'Date'
         ylabel_plt1 = 'Price'
@@ -127,5 +138,12 @@ class Stock_NB_Analyzer:
         xlabel_plt2 = 'Date'
         ylabel_plt2 = 'Change'
         
-        plot_values(x_values_plt1, y_values_plt1, labels_plt1, xlabel_plt1, ylabel_plt1, title_plt1, isDates=True)
-        plot_values(x_values_plt2, y_values_plt2, labels_plt2, xlabel_plt2, ylabel_plt2, title_plt2, isDates=True)
+        p = plot_values(x_values_plt1, y_values_plt1, labels_plt1, xlabel_plt1, ylabel_plt1, title_plt1, isDates=True, isBokeh=isBokeh)
+        p_delta = plot_values(x_values_plt2, y_values_plt2, labels_plt2, xlabel_plt2, ylabel_plt2, title_plt2, isDates=True, isBokeh=isBokeh)
+        
+        if isBokeh:
+            p = row(p_hist, p, p_delta)
+        else:
+            p = "used matplotlib"
+        
+        return p

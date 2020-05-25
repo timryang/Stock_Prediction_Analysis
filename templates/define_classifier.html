@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <body>
+        <div class="leftside_form">
+    		<h2>Define Classifier Parameters</h2>
+    		<div>
+        		<form action = "/classifier_stats" method="POST">
+
+        			<h3>Stock Data Parameters:</h3>
+        			<label>Ticker Symbol*:</label><input type='text' name='ticker' value = {{ ticker }}><br>
+        			<label>Years of Data*:</label><input type='number' step=0.01 name='years' value= {{ years }}> Allows decimals<br>
+
+        			<h3>Twitter Parameters:</h3>
+        			<p style="color:red">Leave non-required fields empty if no filtering is desired</p>
+        			<label>Geo Location:</label> <input type='text' name='geoLocation' value={{ geoLocation }}> Filter on location<br>
+        			<label>Distance (mi):</label><input type='number' name='distance' value={{ distance }}> Within geo location<br>
+        			<label>Start Date:</label> <input type='text' name='sinceDate' value={{ sinceDate }}> Filter on dates<br>
+        			<label>Stop Date:</label><input type='text' name='untilDate' value={{ untilDate }}><br>
+        			<label>Text Query*:</label><input type='text' name='querySearch' value={{ querySearch }}> Twitter search text<br>
+        			<label>Top Tweets:</label><select name='topTweets'>
+                    {% if topTweets == True %}
+        				<option value=1>True</option>
+        				<option value=0>False</option>
+                    {% else %}
+                        <option value=0>False</option>
+                        <option value=1>True</option>
+                    {% endif %}
+        			</select> Filter on top tweets<br>
+        			<label>Max Tweets:</label><input type='number' name='maxTweets' value={{ maxTweets }}> Limit qty (0 = no limit)<br>
+                    
+        			<h3>Classifier Parameters</h3>
+        			<label>Analysis Interval*:</label><input type='number' name='deltaInterval' value={{ deltaInterval }}> In days<br>
+        			<label>Train Size*:</label><input type='number' step=0.01 name='trainSize' value={{ trainSize }}> % of data used for training<br>
+        			<label>Use IDF:</label><select name='useIDF'>
+    	    		{% if useIDF == True %}
+                        <option value=1>True</option>
+                        <option value=0>False</option>
+                    {% else %}
+                        <option value=0>False</option>
+                        <option value=1>True</option>
+                    {% endif %}
+        			</select> Normalize word frequency<br>
+        			<label>Do Downsample:</label><select name='do_downsample'>
+    	    		{% if do_downsample == True %}
+                        <option value=1>True</option>
+                        <option value=0>False</option>
+                    {% else %}
+                        <option value=0>False</option>
+                        <option value=1>True</option>
+                    {% endif %}
+        			</select> Downsample data for eveness<br>
+                    <label>Use Stopwords:</label><select name='useStopwords'>
+                    {% if useStopwords == True %}
+                        <option value=1>True</option>
+                        <option value=0>False</option>
+                    {% else %}
+                        <option value=0>False</option>
+                        <option value=1>True</option>
+                    {% endif %}
+                    </select> Filter common words<br>
+                    <label>Add Stopwords:</label><input type='text' name='addStopwords' value={{ addStopwords }}> Space separated<br>
+
+        			<p style="color:red">*Required fields</p>
+        			<input type='submit' value='Analyze Model'>
+
+        		</form>
+    		</div>
+        </div>
+
+        <div class="rightside_plot">
+
+            {{ script_p|safe }}
+            {{ div_p|safe }}
+
+        </div>
+
+        <div class="text_area">
+            <div class="text_1">
+                <h4>Raw Count Report:</h4>
+                {{ count_report|safe }}
+            </div>
+            <div class="text_2">
+                <h4>Classifier Stats:</h4>
+                <div class="small">
+                    {{ report|safe }}
+                </div>
+                <div class="small">
+                    {{ confusion_matrix|safe }}
+                </div>
+            </div>
+            <div class="text_3">
+                <h4>Most Informative Words:</h4>
+                <div class="small">
+                    {{ most_inform|safe }}
+                </div>
+            </div>
+        </div>
+
+    </body>
+{% endblock %}

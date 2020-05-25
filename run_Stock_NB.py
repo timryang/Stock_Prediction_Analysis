@@ -14,7 +14,7 @@ years = 3
 
 # Get new if false
 loadTweets = True
-loadData = True
+loadData = False
 
 # Classifier tweet parameters (only used if loadTweets = False):
 geoLocation = None
