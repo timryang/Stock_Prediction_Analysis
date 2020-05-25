@@ -91,7 +91,7 @@ def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, is
             axis_type = "linear"
         p = figure(tools="pan,box_zoom,reset,save", title=title,\
            x_axis_label=x_label, y_axis_label=y_label, x_axis_type=axis_type,\
-               plot_width=350, plot_height=310)
+               plot_width=525, plot_height=310)
         for idx, i_y_values in enumerate(y_values):
             p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=palette[idx])
         return p
@@ -262,18 +262,19 @@ def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
     tweetText = list(predictTweets['Text'])
     tf_text = transform_text(tweetText, count_vect, tfTransformer)
     predictions = clf.predict(tf_text)
+    predictionTxt = ""
     if printAll:
         for idx, prediction in enumerate(predictions):
-            print("\nTweet:")
-            print(tweetText[idx])
-            print("Prediction: " + prediction)
+            predictionTxt = predictionTxt + "Tweet: " + "\n" + tweetText[idx] + \
+                "\n" + "Prediction: " + prediction + "\n\n"
+        print("\n" + predictionTxt)
     classes = clf.classes_
     class_counts = []
     for i_class in classes:
         i_num = list(predictions).count(i_class)
         class_counts.append(i_num)
-    result = "Predicted tweets: "
+    result = "Predicted Tweets: "
     for idx, i_class in enumerate(classes):
-        result = "\n" + i_class + ": " + str(class_counts[idx])
+        result = result + "\n" + i_class + ": " + str(class_counts[idx])
     print("\n" + result)
-    return result
+    return result, predictionTxt

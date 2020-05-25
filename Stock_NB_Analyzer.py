@@ -102,10 +102,10 @@ class Stock_NB_Analyzer:
         return report, most_inform, p
             
     def run_prediction(self, geoLocation, distance, txtSearch, numMaxTweets, topTweets, printAll):
-        result = predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
+        results, predictionTxt = predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
             txtSearch, geoLocation, distance, numMaxTweets,\
                 topTweets, printAll)
-        return result
+        return results, predictionTxt
     
     def plot_data(self, deltaInterval, isBokeh=False):
         
@@ -142,7 +142,7 @@ class Stock_NB_Analyzer:
         p_delta = plot_values(x_values_plt2, y_values_plt2, labels_plt2, xlabel_plt2, ylabel_plt2, title_plt2, isDates=True, isBokeh=isBokeh)
         
         if isBokeh:
-            p = row(p_hist, p, p_delta)
+            p = row(p, p_delta)
         else:
             p = "used matplotlib"
         

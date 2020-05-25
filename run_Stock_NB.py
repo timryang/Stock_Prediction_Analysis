@@ -14,7 +14,7 @@ years = 3
 
 # Get new if false
 loadTweets = True
-loadData = False
+loadData = True
 
 # Classifier tweet parameters (only used if loadTweets = False):
 geoLocation = None
@@ -46,7 +46,7 @@ distance_predict = None
 txtSearch_predict = 'MRNA'
 numMaxTweets_predict = 10
 topTweets_predict = True
-printAll = False
+printAll = True
 
 
 #%% Execute

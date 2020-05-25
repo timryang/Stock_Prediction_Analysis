@@ -67,7 +67,7 @@
                         <option value=0>False</option>
                         <option value=1>True</option>
                     {% endif %}
-        			</select> Downsample data for eveness<br>
+        			</select> Downsample for eveness<br>
                     <label>Use Stopwords:</label><select name='useStopwords'>
                     {% if useStopwords == True %}
                         <option value=1>True</option>
@@ -127,6 +127,18 @@
                 <div class="small">
                     {{ most_inform|safe }}
                 </div>
+            </div>
+        </div>
+
+        <div class="pred_area">
+            <div class="results_area">
+                <h4>Prediction Results:</h4>
+                <div>
+                    {{ pred_results|safe }}
+                </div>
+            </div>
+            <div class="tweet_results">
+                {{ pred_text|safe }}
             </div>
         </div>
 

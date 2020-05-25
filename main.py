@@ -22,9 +22,9 @@ engine = create_engine(database_URI, echo=False)
 app = Flask(__name__)
 
 @app.route('/')
-@app.route('/define_classifier', methods=['GET', 'POST'])
-def define_classifier():
-    return render_template('classifier_stats.html', ticker='', years=3,\
+@app.route('/define_parameters', methods=['GET', 'POST'])
+def define_parameters():
+    return render_template('results.html', ticker='', years=3,\
                            geoLocation='', distance='', sinceDate='yyyy-mm-dd', untilDate='yyyy-mm-dd',\
                                querySearch='', topTweets=True, maxTweets=0,\
                                    deltaInterval=1, trainSize=0.8,\
@@ -33,8 +33,8 @@ def define_classifier():
                                            geoLocationPredict='', distancePredict='', querySearchPredict='',\
                                                topTweetsPredict=True, maxTweetsPredict=10)
 
-@app.route('/classifier_stats', methods=['GET', 'POST'])
-def classifier_stats():
+@app.route('/results', methods=['GET', 'POST'])
+def results():
         
     ticker = request.form['ticker']
     years = int(request.form['years'])
@@ -121,11 +121,13 @@ def classifier_stats():
     topTweetsPredict = bool(int(request.form['topTweetsPredict']))
     maxTweetsPredict = int(request.form['maxTweetsPredict'])
     
-    pred_results = NB_analyzer.run_prediction(geoLocationPredict, distancePredict, querySearchPredict,\
-                           maxTweetsPredict, topTweetsPredict, printAll=False)
+    pred_results, pred_text = NB_analyzer.run_prediction(geoLocationPredict, distancePredict, querySearchPredict,\
+                           maxTweetsPredict, topTweetsPredict, printAll=True)
+    print(pred_text)
     pred_results = pred_results.replace('\n', '<br/>')
+    pred_text = pred_text.replace('\n', '<br/>')
         
-    return render_template('classifier_stats.html', ticker=ticker, years=years,\
+    return render_template('results.html', ticker=ticker, years=years,\
                            geoLocation=geoLocation, distance=distance, sinceDate=sinceDate, untilDate=untilDate,\
                                querySearch=querySearch, topTweets=topTweets, maxTweets=maxTweets,\
                                    deltaInterval=deltaInterval, trainSize=trainSize,\
@@ -138,7 +140,7 @@ def classifier_stats():
                                                            recollectTweets=recollectTweets, geoLocationPredict=geoLocationPredict,\
                                                                distancePredict=distancePredict, querySearchPredict=querySearchPredict,\
                                                                    topTweetsPredict=topTweetsPredict, maxTweetsPredict=maxTweetsPredict,
-                                                                   pred_results=pred_results)
+                                                                   pred_results=pred_results, pred_text=pred_text)
         
 #%% Launch the FlaskPy dev server
 app.run(host="localhost", debug=True)

@@ -23,6 +23,10 @@
         select{
           width: 125px;
         }
+        body{
+          font-family: Arial, Helvetica, sans-serif;
+          font-size: 90%;
+        }
         .small {
           transform: scale(0.9, 0.9);
           -ms-transform: scale(0.9, 0.9); /* IE 9 */
@@ -36,6 +40,7 @@
           height: 820px;
           float: left;
           outline: 1px dotted black;
+          background-color: ivory;
         }
         .rightside_plot {
           width: 70%;
@@ -48,30 +53,49 @@
           height: 325px;
           float: left;
           outline: 1px dotted black;
+          background-color: ivory;
         }
         .text_1 {
           width: 33%;
           float: left;
+          background-color: ivory;
         }
         .text_2 {
           width: 33%;
           float: left;
+          background-color: ivory;
         }
         .text_3 {
           width: 33%;
           float: left;
+          background-color: ivory;
         }
-        .bottom_leftside_form{
-          width: 30%;
-          height: 325px;
+        .pred_area {
+          width: 70%;
+          height: 170px;
           float: left;
-          outline: 1px dotted black;
+          outline: 3px dotted green;
+          background-color: darkseagreen;
         }
+        .results_area {
+          background-color: lightsteelblue;
+          width: 20%;
+          height: 170px;
+          float: left;
+          outline: 3px dotted green;
+        }
+        .tweet_results {
+          background-color: ivory;
+          width: 80%;
+          height: 170px;
+          overflow-y: scroll;
+          float: left;
+      }
       </style>
 
     </head>
     <body>
-        <div><a href="/define_classifier">Define New Classifier</a></div>
+        <div><a href="/define_parameters">Define Parameters</a></div>
         <hr>
         {% block content %}{% endblock %}
     </body>
