@@ -182,7 +182,7 @@ def classifier_statistics(x_test, y_truth, clf, count_vect, n_features=10, doHTM
         recall_list = []
         f1_list = []
         support_list = []
-        total_support = report[list(report.keys())[4]]['support']
+        total_support = report[list(report.keys())[3]]['support']
         for key, value in report.items():
             if (key != 'accuracy'):
                 precision_list.append(round(value['precision'], 2))
