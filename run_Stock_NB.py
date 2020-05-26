@@ -10,7 +10,7 @@ from nltk.corpus import stopwords
 #%% Inputs:
 
 ticker = 'MRNA'
-years = 3
+years = 1
 
 # Get new if false
 loadTweets = True
