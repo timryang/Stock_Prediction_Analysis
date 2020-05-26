@@ -140,7 +140,4 @@ def results():
                                                                distancePredict=distancePredict, querySearchPredict=querySearchPredict,\
                                                                    topTweetsPredict=topTweetsPredict, maxTweetsPredict=maxTweetsPredict,
                                                                    pred_results=pred_results, pred_text=pred_text)
-
-#%% Launch the FlaskPy dev server
-if __name__ == '__main__':
-    app.run(host="localhost", debug=True)
+        
