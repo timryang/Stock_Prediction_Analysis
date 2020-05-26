@@ -24,13 +24,13 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/define_parameters', methods=['GET', 'POST'])
 def define_parameters():
-    return render_template('results.html', ticker='', years=3,\
-                           geoLocation='', distance='', sinceDate='yyyy-mm-dd', untilDate='yyyy-mm-dd',\
-                               querySearch='', topTweets=True, maxTweets=0,\
-                                   deltaInterval=1, trainSize=0.8,\
+    return render_template('results.html', ticker='TSLA', years=1,\
+                           geoLocation='', distance='', sinceDate='2020-03-01', untilDate='2020-05-20',\
+                               querySearch='TSLA', topTweets=True, maxTweets=1000,\
+                                   deltaInterval=3, trainSize=0.8,\
                                        useIDF=True, do_downsample=True, useStopwords=True, addStopwords='',\
                                            recollectTweets=True, recollectData=True,\
-                                           geoLocationPredict='', distancePredict='', querySearchPredict='',\
+                                           geoLocationPredict='', distancePredict='', querySearchPredict='TSLA',\
                                                topTweetsPredict=True, maxTweetsPredict=10)
 
 @app.route('/results', methods=['GET', 'POST'])
