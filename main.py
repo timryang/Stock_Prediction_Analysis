@@ -143,4 +143,5 @@ def results():
                                                                    pred_results=pred_results, pred_text=pred_text)
         
 #%% Launch the FlaskPy dev server
-app.run(host="localhost", debug=True)
+# app.run(host="localhost", debug=True)
+app.run(threaded=True, port=5000)
