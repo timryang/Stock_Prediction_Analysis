@@ -10,7 +10,6 @@ from flask import Flask, render_template, request
 from bokeh.embed import components
 from Stock_NB_Analyzer import Stock_NB_Analyzer
 from nltk.corpus import stopwords
-from nltk import word_tokenize
 from sqlalchemy import create_engine
 import pandas as pd
 
@@ -65,7 +64,7 @@ def results():
     else:
         stopwordsList = []
     addStopwords = request.form['addStopwords']
-    add_stopwords_tokenized = word_tokenize(addStopwords)
+    add_stopwords_tokenized = addStopwords.split(' ')
     if add_stopwords_tokenized:
         for word in add_stopwords_tokenized:
             stopwordsList.append(word)
