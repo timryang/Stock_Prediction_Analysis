@@ -143,4 +143,4 @@ def results():
         
 #%% Launch the FlaskPy dev server
 # app.run(host="localhost", debug=True)
-app.run(host='0.0.0.0')
+# app.run(host='0.0.0.0')
