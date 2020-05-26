@@ -36,7 +36,7 @@ def define_parameters():
 def results():
         
     ticker = request.form['ticker']
-    years = int(request.form['years'])
+    years = float(request.form['years'])
     geoLocation = request.form['geoLocation']
     if (geoLocation == 'latitude, longitude') or (geoLocation == '') or (geoLocation == 'None'):
         geoLocation = None
