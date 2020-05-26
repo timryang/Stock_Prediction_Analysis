@@ -76,6 +76,17 @@ def get_tweets(txtSearch, startDate=None, stopDate=None, geoLocation=None,\
     tweetsDF.reset_index(drop = True, inplace = True)
     return tweetsDF
 
+def collect_stock_data(ticker, years):
+        oneYearUnix = 31536000
+        tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
+            + "?period1=" + str(int(time.time())-round((oneYearUnix*years))) + "&period2="\
+                + str(int(time.time())) + "&interval=1d&events=history"
+        try:
+            stockData = pd.read_csv(tempLink)
+        except:
+            raise ValueError("Bad link: Double check your ticker")
+        return stockData
+
 def count_tweets_by_day(tweets_DF):
     tweet_dates = [str(dt.date()) for dt in pd.to_datetime(tweets_DF['Date'])]
     unique_dates = list(set(tweet_dates))

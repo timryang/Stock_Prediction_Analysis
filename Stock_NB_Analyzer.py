@@ -30,14 +30,7 @@ class Stock_NB_Analyzer:
             self.tweetsDF_ = pd.read_csv(directory)
         
     def collect_data(self, ticker, years):
-        oneYearUnix = 31536000
-        tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
-            + "?period1=" + str(int(time.time())-(oneYearUnix*years)) + "&period2="\
-                + str(int(time.time())) + "&interval=1d&events=history"
-        try:
-            stockData = pd.read_csv(tempLink)
-        except:
-            raise ValueError("Bad link: Double check your ticker")
+        stockData = collect_stock_data(ticker, years)
         self.stockData_ = stockData
         
     def load_data(self, directory):
