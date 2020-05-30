@@ -25,6 +25,7 @@ import datetime
 from bokeh.plotting import figure
 from bokeh.palettes import Dark2_5 as palette
 from bokeh.layouts import row
+from TweetCriteria_TRY import TweetCriteria as TC_TRY
 
 warnings.filterwarnings("ignore")
 
@@ -43,32 +44,20 @@ def del_idx(input_list, idxs):
         del input_list[idx]
     return input_list
 
-def get_tweets(txtSearch, startDate=None, stopDate=None, geoLocation=None,\
-               distance=None, topTweets=True, numMaxTweets=10):
-    if (startDate == None and geoLocation == None):
-        tweetCriteria = got.manager.TweetCriteria().setQuerySearch(txtSearch)\
-                                                .setTopTweets(topTweets)\
-                                                .setMaxTweets(numMaxTweets)
-    elif (geoLocation == None and startDate != None):
-        tweetCriteria = got.manager.TweetCriteria().setSince(startDate)\
-                                                .setUntil(stopDate)\
-                                                .setQuerySearch(txtSearch)\
-                                                .setTopTweets(topTweets)\
-                                                .setMaxTweets(numMaxTweets)
-    elif (startDate == None and geoLocation != None):
-        tweetCriteria = got.manager.TweetCriteria().setNear(geoLocation)\
-                                                .setWithin(distance)\
-                                                .setQuerySearch(txtSearch)\
-                                                .setTopTweets(topTweets)\
-                                                .setMaxTweets(numMaxTweets)
-    else:
-        tweetCriteria = got.manager.TweetCriteria().setSince(startDate)\
-                                                .setUntil(stopDate)\
-                                                .setNear(geoLocation)\
-                                                .setWithin(distance)\
-                                                .setQuerySearch(txtSearch)\
-                                                .setTopTweets(topTweets)\
-                                                .setMaxTweets(numMaxTweets)
+def get_tweets(txtSearch, userName=None, startDate=None, stopDate=None, geoLocation=None,\
+               distance=None, topTweets=True, numMaxTweets=10, lang=None):
+
+    tweetCriteria = TC_TRY()
+    tweetCriteria.setUsername(userName)
+    tweetCriteria.setSince(startDate)
+    tweetCriteria.setUntil(stopDate)
+    tweetCriteria.setNear(geoLocation)
+    tweetCriteria.setWithin(distance)
+    tweetCriteria.setQuerySearch(txtSearch)
+    tweetCriteria.setTopTweets(topTweets)
+    tweetCriteria.setMaxTweets(numMaxTweets)
+    tweetCriteria.setLang(lang)
+    
     tweets = got.manager.TweetManager.getTweets(tweetCriteria)
     tweetsParsed = [[tweet.date, tweet.text, tweet.retweets] for tweet in tweets]
     tweetsDF = pd.DataFrame(tweetsParsed, columns = ['Date', 'Text', 'Retweets'])
@@ -265,11 +254,11 @@ def NB_show_most_informative(clf, count_vect, n_features=10, doHTML=False):
     return report
               
 def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
-                        geo_location=None, distance=None, num_max_tweets=0,\
-                            top_tweets=True, printAll=False):
-    predictTweets = get_tweets(txt_search, geoLocation=geo_location, \
+                        userName=None, geo_location=None, distance=None, num_max_tweets=0,\
+                            top_tweets=True, lang=None, printAll=False):
+    predictTweets = get_tweets(txt_search, userName=userName, geoLocation=geo_location, \
                                 distance=distance, topTweets=top_tweets,\
-                                    numMaxTweets=num_max_tweets)
+                                    numMaxTweets=num_max_tweets, lang=lang)
     tweetText = list(predictTweets['Text'])
     tf_text = transform_text(tweetText, count_vect, tfTransformer)
     predictions = clf.predict(tf_text)

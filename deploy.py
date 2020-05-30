@@ -23,22 +23,25 @@ app = Flask(__name__)
 @app.route('/')
 @app.route('/define_parameters', methods=['GET', 'POST'])
 def define_parameters():
-    return render_template('results.html', ticker='MRNA', years=1,\
-                           geoLocation='', distance='', sinceDate='2020-03-01', untilDate='2020-05-20',\
-                               querySearch='MRNA', topTweets=True, maxTweets=500,\
+    return render_template('results.html', ticker='MRNA', years=1, userName='',\
+                           geoLocation='latitude,longitude', distance='', sinceDate='2020-03-01', untilDate='2020-05-20',\
+                               querySearch='MRNA', topTweets=True, maxTweets=500, lang='en',\
                                    deltaInterval=3, trainSize=0.8,\
                                        useIDF=True, do_downsample=True, useStopwords=True, addStopwords='',\
                                            recollectTweets=True, recollectData=True,\
-                                           geoLocationPredict='', distancePredict='', querySearchPredict='MRNA',\
-                                               topTweetsPredict=True, maxTweetsPredict=10)
+                                           userNamePredict='', geoLocationPredict='latitude,longitude', distancePredict='', querySearchPredict='MRNA',\
+                                               topTweetsPredict=True, maxTweetsPredict=10, langPredict='en')
 
 @app.route('/results', methods=['GET', 'POST'])
 def results():
         
     ticker = request.form['ticker']
     years = float(request.form['years'])
+    userName = request.form['userName']
+    if (userName == '') or (userName == 'None'):
+        userName = None
     geoLocation = request.form['geoLocation']
-    if (geoLocation == 'latitude, longitude') or (geoLocation == '') or (geoLocation == 'None'):
+    if (geoLocation == 'latitude,longitude') or (geoLocation == '') or (geoLocation == 'None'):
         geoLocation = None
     distance = request.form['distance']
     if (distance == '') or (distance == 'None'):
@@ -54,6 +57,9 @@ def results():
     querySearch = request.form['querySearch']
     topTweets = bool(int(request.form['topTweets']))
     maxTweets = int(request.form['maxTweets'])
+    lang = request.form['lang']
+    if (lang == 'None') or (lang == ''):
+        lang = None
     deltaInterval = int(request.form['deltaInterval'])
     trainSize = float(request.form['trainSize'])
     useIDF = bool(int(request.form['useIDF']))
@@ -77,7 +83,7 @@ def results():
     
     NB_analyzer = Stock_NB_Analyzer()
     if recollectTweets:
-        NB_analyzer.collect_tweets(geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets)
+        NB_analyzer.collect_tweets(userName, geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets, lang)
         tweetsDF = NB_analyzer.tweetsDF_
         sqlite_connection = engine.connect()
         tweetsDF.to_sql(name='Tweets', con=sqlite_connection, if_exists='replace')
@@ -108,8 +114,11 @@ def results():
     most_inform = most_inform.to_html(index=False)
     conf_mat = conf_mat.to_html(index=False, bold_rows=True)
     
+    userNamePredict = request.form['userNamePredict']
+    if (userNamePredict == '') or (userNamePredict == 'None'):
+        userNamePredict = None
     geoLocationPredict = request.form['geoLocationPredict']
-    if (geoLocationPredict == 'latitude, longitude') or (geoLocationPredict == '') or (geoLocationPredict == 'None'):
+    if (geoLocationPredict == 'latitude,longitude') or (geoLocationPredict == '') or (geoLocationPredict == 'None'):
         geoLocationPredict = None
     distancePredict = request.form['distancePredict']
     if (distancePredict == '') or (distancePredict == 'None'):
@@ -119,16 +128,19 @@ def results():
     querySearchPredict = request.form['querySearchPredict']
     topTweetsPredict = bool(int(request.form['topTweetsPredict']))
     maxTweetsPredict = int(request.form['maxTweetsPredict'])
+    langPredict = request.form['langPredict']
+    if (langPredict == 'None') or (langPredict == ''):
+        langPredict = None 
     
-    pred_results, pred_text = NB_analyzer.run_prediction(geoLocationPredict, distancePredict, querySearchPredict,\
-                           maxTweetsPredict, topTweetsPredict, printAll=True)
+    pred_results, pred_text = NB_analyzer.run_prediction(userNamePredict, geoLocationPredict, distancePredict, querySearchPredict,\
+                           maxTweetsPredict, topTweetsPredict, langPredict, printAll=True)
     print(pred_text)
     pred_results = pred_results.replace('\n', '<br/>')
     pred_text = pred_text.replace('\n', '<br/>')
         
-    return render_template('results.html', ticker=ticker, years=years,\
+    return render_template('results.html', ticker=ticker, years=years, userName=userName,\
                            geoLocation=geoLocation, distance=distance, sinceDate=sinceDate, untilDate=untilDate,\
-                               querySearch=querySearch, topTweets=topTweets, maxTweets=maxTweets,\
+                               querySearch=querySearch, topTweets=topTweets, maxTweets=maxTweets, lang=lang,\
                                    deltaInterval=deltaInterval, trainSize=trainSize,\
                                        useIDF=useIDF, do_downsample=do_downsample, useStopwords=useStopwords,\
                                            addStopwords=addStopwords,\
@@ -136,8 +148,8 @@ def results():
                                                count_report=count_report,\
                                                    report=report, most_inform=most_inform,\
                                                        confusion_matrix=conf_mat, recollectData=recollectData,\
-                                                           recollectTweets=recollectTweets, geoLocationPredict=geoLocationPredict,\
+                                                           recollectTweets=recollectTweets, userNamePredict=userNamePredict, geoLocationPredict=geoLocationPredict,\
                                                                distancePredict=distancePredict, querySearchPredict=querySearchPredict,\
-                                                                   topTweetsPredict=topTweetsPredict, maxTweetsPredict=maxTweetsPredict,
+                                                                   topTweetsPredict=topTweetsPredict, maxTweetsPredict=maxTweetsPredict, langPredict=langPredict,\
                                                                    pred_results=pred_results, pred_text=pred_text)
         

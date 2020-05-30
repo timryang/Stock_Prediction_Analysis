@@ -13,17 +13,19 @@ ticker = 'MRNA'
 years = 1
 
 # Get new if false
-loadTweets = True
+loadTweets = False
 loadData = True
 
 # Classifier tweet parameters (only used if loadTweets = False):
+userName = None
 geoLocation = None
 distance = None
 sinceDate = '2020-03-01'
 untilDate = '2020-05-14'
 querySearch = 'MRNA'
-maxTweets = 0
+maxTweets = 500
 topTweets = True
+lang = 'en'
 
 # Tweet and data directories:
 tweetDir = './CSV_Files/MRNA_Tweets.csv'
@@ -41,11 +43,13 @@ do_stat = True
 numFeatures = 10
 
 # New tweet prediction parameters:
+userName_predict = None
 geoLocation_predict = None
 distance_predict = None
 txtSearch_predict = 'MRNA'
 numMaxTweets_predict = 10
 topTweets_predict = True
+lang_predict = 'en'
 printAll = True
 
 
@@ -55,7 +59,7 @@ NB_analyzer = Stock_NB_Analyzer()
 if loadTweets:
     NB_analyzer.load_tweets(tweetDir)
 else:
-    NB_analyzer.collect_tweets(geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets)
+    NB_analyzer.collect_tweets(userName, geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets, lang)
 if loadData:
     NB_analyzer.load_data(dataDir)
 else:
@@ -63,5 +67,5 @@ else:
 NB_analyzer.correlate_tweets(deltaInterval)
 NB_analyzer.plot_data(deltaInterval)
 NB_analyzer.create_classifier(trainSize, stopwordsList, useIDF, do_downsample, do_stat, numFeatures)
-NB_analyzer.run_prediction(geoLocation_predict, distance_predict, txtSearch_predict,\
-                           numMaxTweets_predict, topTweets_predict, printAll)
+NB_analyzer.run_prediction(userName_predict, geoLocation_predict, distance_predict, txtSearch_predict,\
+                           numMaxTweets_predict, topTweets_predict, lang_predict, printAll)

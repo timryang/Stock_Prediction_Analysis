@@ -18,10 +18,10 @@ class Stock_NB_Analyzer:
         self.tfTransformer_ = TfidfTransformer()
         self.clf_ = MultinomialNB()
         
-    def collect_tweets(self, geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets):
-        self.tweetsDF_ = get_tweets(querySearch, startDate = sinceDate, stopDate = untilDate,\
-                          geoLocation = geoLocation, distance = distance,\
-                              topTweets = topTweets, numMaxTweets = maxTweets)
+    def collect_tweets(self, userName, geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets, lang):
+        self.tweetsDF_ = get_tweets(querySearch, userName=userName, startDate=sinceDate, stopDate=untilDate,\
+                          geoLocation=geoLocation, distance =distance,\
+                              topTweets=topTweets, numMaxTweets=maxTweets, lang=lang)
     
     def load_tweets(self, directory):
         if isinstance(directory, pd.DataFrame):
@@ -94,10 +94,10 @@ class Stock_NB_Analyzer:
                                     do_stat=do_stat, n_features=numFeatures, doHTML=doHTML)
         return report, most_inform, p
             
-    def run_prediction(self, geoLocation, distance, txtSearch, numMaxTweets, topTweets, printAll):
+    def run_prediction(self, userName, geoLocation, distance, txtSearch, numMaxTweets, topTweets, lang, printAll):
         results, predictionTxt = predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
-            txtSearch, geoLocation, distance, numMaxTweets,\
-                topTweets, printAll)
+            txtSearch, userName, geoLocation, distance, numMaxTweets,\
+                topTweets, lang, printAll)
         return results, predictionTxt
     
     def plot_data(self, deltaInterval, isBokeh=False):

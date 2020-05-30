@@ -22,6 +22,7 @@
                     </select><span style="color: #ff0000"> Must be true initially</span><br>
 
         			<h3>Classifier Twitter Parameters:</h3>
+                    <label>Username:</label> <input type='text' name='userName' value={{ userName }}> Filter on username<br>
         			<label>Geo Location:</label> <input type='text' name='geoLocation' value={{ geoLocation }}> Filter on location<br>
         			<label>Distance (mi):</label><input type='number' name='distance' value={{ distance }}> Within geo location<br>
         			<label>Start Date:</label> <input type='text' name='sinceDate' value={{ sinceDate }}> Filter on dates<br>
@@ -37,6 +38,7 @@
                     {% endif %}
         			</select> Filter on top tweets<br>
         			<label>Max Tweets:</label><input type='number' name='maxTweets' value={{ maxTweets }}> Limit qty (0 = no limit)<br>
+                    <label>Language:</label><input type='text' name='lang' value={{ lang }}> Language code<br>
                     <label>Recollect Tweets:</label><select name='recollectTweets'>
                     {% if recollectTweets == True %}
                         <option value=1>True</option>
@@ -80,6 +82,7 @@
                     <label>Add Stopwords:</label><input type='text' name='addStopwords' value={{ addStopwords }}> Space separated<br>
 
                     <h3>Prediction Twitter Parameters:</h3>
+                    <label>Username:</label> <input type='text' name='userNamePredict' value={{ userNamePredict }}> Filter on username<br>
                     <label>Geo Location:</label> <input type='text' name='geoLocationPredict' value={{ geoLocationPredict }}><br>
                     <label>Distance (mi):</label><input type='number' name='distancePredict' value={{ distancePredict }}><br>
                     <label>Text Query<span style="color: #ff0000">*</span>:</label><input type='text' name='querySearchPredict' value={{ querySearchPredict }}><br>
@@ -92,7 +95,8 @@
                         <option value=1>True</option>
                     {% endif %}
                     </select><br>
-                    <label>Max Tweets:</label><input type='number' name='maxTweetsPredict' value={{ maxTweetsPredict }}><br><br>
+                    <label>Max Tweets:</label><input type='number' name='maxTweetsPredict' value={{ maxTweetsPredict }}><br>
+                    <label>Language:</label><input type='text' name='langPredict' value={{ langPredict }}> Language code<br><br>
 
         			<input type='submit' value='Analyze/Predict'>
 
