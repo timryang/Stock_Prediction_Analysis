@@ -6,20 +6,20 @@ Created on Sat May 30 18:15:36 2020
 """
 
 
-from Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
+from Stock_Dependency_Analyzer.Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
 
 #%% Inputs
 doHTML = False
 
 # Stock data
-analyzeTicker = 'DAL'
-metricTickers = ['GOLD','XOM','MRNA']
+analyzeTicker = 'TSLA'
+metricTickers = ['GOLD','XOM','MRNA','GOOG']
 years = 1
 
 # Correlator data
 trainSize = 0.8
 analyzeInterval = 3
-metricInterval = 3
+metricInterval = 7
 changeFilter = 0
 
 # SVM parameters:

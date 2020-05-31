@@ -55,7 +55,7 @@ class Stock_Dependency_Analyzer():
         
         # Compute metric percent change
         metricDates = dates[metricInterval:]
-        metricCloseDiff = np.array([metricCloseData[i+metricInterval, :]-metricCloseData[i, :] \
+        metricCloseDiff = np.array([metricCloseData[i+metricInterval]-metricCloseData[i] \
                                     for i in range(metricCloseData.shape[0]-metricInterval)])
         metricPercDiff = metricCloseDiff / metricCloseData[:-metricInterval]
         
@@ -68,25 +68,36 @@ class Stock_Dependency_Analyzer():
         # Filter on changeFilter
         validIdx = np.where(np.abs(analyzePercDiff) > changeFilter)[0]
         analyze_filt = analyzePercDiff[validIdx]
-        metric_filt = metricPercDiff[validIdx, :]
-        self.metric_filt_ = metric_filt
+        metric_filt = metricPercDiff[validIdx]
+        if metric_filt.ndim == 1:
+            self.metric_filt_ = metric_filt.reshape(-1, 1)
+        else:
+            self.metric_filt_ = metric_filt
         
         # Assign labels
         stockResults = np.where(analyze_filt > 0, 'Positive', 'Negative')
         self.stockResults_ = stockResults
         
         # Assign predictors
-        predictors = metricPercDiff[len(analyzePercDiff):,:]
-        self.predictors_ = predictors
+        predictors = metricPercDiff[len(analyzePercDiff):]
+        if predictors.ndim == 1:
+            self.predictors_ = predictors.reshape(-1, 1)
+        else:
+            self.predictors_ = predictors
         
         # Plot close vs dates
         x_values = [dates]
         y_values = [analyzeCloseData]
         labels = [self.analyzeTicker_]
-        for idx, val in enumerate(self.metricTickers_):
-            y_values.append(metricCloseData[:,idx])
-            labels.append(val)
+        if len(self.metricTickers_) < 2:
+            y_values.append(metricCloseData)
+            labels.append(self.metricTickers_[0])
             x_values.append(dates)
+        else:
+            for idx, val in enumerate(self.metricTickers_):
+                y_values.append(metricCloseData[:,idx])
+                labels.append(val)
+                x_values.append(dates)
         title = 'Close Data'
         x_label = 'Dates'
         y_label = 'Close Price'
@@ -95,9 +106,13 @@ class Stock_Dependency_Analyzer():
         # Plot diff vs dates
         x_values_diff = [dates[:-1], analyzeDates]
         y_values_diff = [np.diff(analyzeCloseData)/analyzeCloseData[:-1], analyzePercDiff]
-        for idx, val in enumerate(self.metricTickers_):
+        if len(self.metricTickers_) < 2:
+            y_values_diff.append(metricPercDiff)
             x_values_diff.append(metricDates)
-            y_values_diff.append(metricPercDiff[:,idx])
+        else:
+            for idx, val in enumerate(self.metricTickers_):
+                x_values_diff.append(metricDates)
+                y_values_diff.append(metricPercDiff[:,idx])
         labels.insert(0, self.analyzeTicker_ + ' Daily')
         title_diff = 'Interval % Change'
         y_label_diff = '% Change'
@@ -110,9 +125,13 @@ class Stock_Dependency_Analyzer():
         if len(self.metricTickers_) <= 3:
             titleTxt = self.analyzeTicker_ + " % Change"
             axes_labels = [val + " % Change" for val in self.metricTickers_]
+            if len(self.metricTickers_) == 1:
+                axes_labels.append(self.analyzeTicker_ + " % Change")
             ps = plot_multi_scatter([metric_filt, predictors], ['Historical', 'Predictors'],\
                                axes_labels, self.analyzeTicker_ + " Result", \
                                    color_values_list=[analyze_filt, False], saveFig=doHTML)
+        else:
+            ps = "Too many to plot"
         
         return p, ps
         

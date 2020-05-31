@@ -200,11 +200,18 @@ def plot_multi_scatter(axes_values_list, labels, axes_labels, title, color_value
     colors = ['r','b','g','k','c','m','y'] # Only supports 7 labels
     markers = ['o','x','^'] # Only supports 3 labels
     cm = plt.cm.get_cmap('RdYlBu')
-    if axes_values_list[0].shape[1] == 2:
+    if axes_values_list[0].ndim == 1:
+        ax = fig.add_subplot(111)
+        for idx, val in enumerate(labels):
+            if hasattr(color_values_list[idx], "__len__"):
+                p = ax.scatter(axes_values_list[idx], color_values_list[idx], marker=markers[idx], label=val)
+            else:
+                p = ax.scatter(axes_values_list[idx], np.zeros(axes_values_list[idx].shape), c='k', marker=markers[idx], label=val)
+    elif axes_values_list[0].shape[1] == 2:
         ax = fig.add_subplot(111)
         for idx, val in enumerate(labels):
             if color_values_list == None:
-                ax.scatter(axes_values_list[idx][:,0], axes_values_list[idx][:,1], c=colors[idx], label=val)
+                p = ax.scatter(axes_values_list[idx][:,0], axes_values_list[idx][:,1], c=colors[idx], label=val)
             else:
                 if hasattr(color_values_list[idx], "__len__"):
                     p = ax.scatter(axes_values_list[idx][:,0], axes_values_list[idx][:,1],\
@@ -217,7 +224,7 @@ def plot_multi_scatter(axes_values_list, labels, axes_labels, title, color_value
         ax = fig.add_subplot(111, projection='3d')
         for idx, val in enumerate(labels):
             if color_values_list == None:
-                ax.scatter(axes_values_list[idx][:,0], axes_values_list[idx][:,1], axes_values_list[idx][:,2],\
+                p = ax.scatter(axes_values_list[idx][:,0], axes_values_list[idx][:,1], axes_values_list[idx][:,2],\
                             c=colors[idx], label=val)
             else:
                 if hasattr(color_values_list[idx], "__len__"):
