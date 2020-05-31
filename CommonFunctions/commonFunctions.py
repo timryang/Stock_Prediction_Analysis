@@ -27,7 +27,6 @@ from bokeh.palettes import Dark2_5 as palette
 from bokeh.layouts import row
 from CommonFunctions.TweetCriteria_TRY import TweetCriteria as TC_TRY
 from mpl_toolkits.mplot3d import Axes3D
-
 import io
 import base64
 
@@ -333,7 +332,7 @@ def show_confusion_matrix(y_truth, y_predict, labels, isBokeh=False):
         return "matplotlib was used"
     else:
         cm_df = pd.DataFrame()
-        cm_df['Predicted->'] = pd.Series(labels)
+        cm_df['Predicted>'] = pd.Series(labels)
         for idx, label in enumerate(labels):
             cm_df[label] = pd.Series(list(conf_matrix[:, idx]))
         return cm_df
