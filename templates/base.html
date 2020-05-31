@@ -6,11 +6,14 @@
       <title>Stock Analysis</title>
       {% endif %}
 
+      <meta charset="utf-8" />
+
       <script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.min.js" crossorigin="anonymous"></script>
       <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-1.4.0.min.js" crossorigin="anonymous"></script>
       <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-1.4.0.min.js" crossorigin="anonymous"></script>
 
       <style>
+
         label{
           float: left;
           clear: left;
@@ -27,6 +30,7 @@
           font-family: Arial, Helvetica, sans-serif;
           font-size: 90%;
         }
+
         .small {
           transform: scale(0.9, 0.9);
           -ms-transform: scale(0.9, 0.9); /* IE 9 */
@@ -35,49 +39,50 @@
           -moz-transform: scale(0.9, 0.9); /* Firefox */
           transform-origin: top left;
         }
-        .leftside_form {
+
+        .leftside_twitter_form {
           width: 30%;
           height: 850px;
           float: left;
           outline: 1px dotted black;
           background-color: ivory;
         }
-        .rightside_plot {
+        .rightside_twitter_plot {
           width: 70%;
           height: 325px;
           float: left;
           outline: 1px dotted black;
         }
-        .text_area {
+        .twitter_text_area {
           width: 70%;
           height: 325px;
           float: left;
           outline: 1px dotted black;
           background-color: ivory;
         }
-        .text_1 {
+        .twitter_text_1 {
           width: 33%;
           float: left;
           background-color: ivory;
         }
-        .text_2 {
+        .twitter_text_2 {
           width: 33%;
           float: left;
           background-color: ivory;
         }
-        .text_3 {
+        .twitter_text_3 {
           width: 33%;
           float: left;
           background-color: ivory;
         }
-        .pred_area {
+        .twitter_pred_area {
           width: 70%;
           height: 200px;
           float: left;
           outline: 3px dotted green;
           background-color: darkseagreen;
         }
-        .results_area {
+        .twitter_results_area {
           background-color: lightsteelblue;
           width: 20%;
           height: 200px;
@@ -90,12 +95,72 @@
           height: 200px;
           overflow-y: scroll;
           float: left;
-      }
+        }
+
+        .leftside_dependency {
+          width: 30%;
+          height: 820px;
+          float: left;
+          outline: 1px dotted black;
+          background-color: ivory;
+        }
+        .leftside_dependency_form {
+          width: 100%;
+          height: 500px;
+          float: left;
+          outline: 1px dotted black;
+          background-color: ivory;
+        }
+        .dependency_prediction {
+          width: 100%;
+          height: 280px;
+          float: left;
+          outline: 3px dotted green;
+          background-color: darkseagreen;
+        }
+        .rightside_dependency_plot {
+          width: 70%;
+          height: 325px;
+          float: left;
+          outline: 1px dotted black;
+        }
+        .dependency_scatter_plot {
+          width: 40%;
+          height: 400px;
+          float: left;
+        }
+        .small_scatter {
+          transform: scale(0.8, 0.8);
+          -ms-transform: scale(0.8, 0.8); /* IE 9 */
+          -webkit-transform: scale(0.8, 0.8); /* Safari and Chrome */
+          -o-transform: scale(0.8, 0.8); /* Opera */
+          -moz-transform: scale(0.8, 0.8); /* Firefox */
+          transform-origin: middle;
+        }
+        .dependency_tables {
+          width: 30%;
+          height: 400px;
+          float: left;
+        }
+        .dependency_single_table {
+          width: 50%;
+          height: 200px;
+          float: left;
+        }
+        .small_table {
+          transform: scale(0.6, 0.6);
+          -ms-transform: scale(0.6, 0.6); /* IE 9 */
+          -webkit-transform: scale(0.6, 0.6); /* Safari and Chrome */
+          -o-transform: scale(0.6, 0.6); /* Opera */
+          -moz-transform: scale(0.6, 0.6); /* Firefox */
+          transform-origin: top left;
+        }
+
       </style>
 
     </head>
     <body>
-        <div><a href="/define_parameters">Define Parameters</a></div>
+        <div><a href="/home">Home</a> | <a href="/define_nb_parameters">Twitter Sentiment</a> | <a href="/define_dependency">Stock Dependency</a></div>
         <hr>
         {% block content %}{% endblock %}
     </body>

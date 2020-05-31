@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <body>
+        <h2>Stock Analysis</h2>
+        <h3>Background</h3>
+        <p>Welcome to my stock analysis web app!<br>
+        My goal is to use machine learning theory and algorithms to provide market indicators and reduce risk for investment decisions.<br><br>
+        This web app currently supports two methods of analysis:<br>
+        1. Twitter Sentiment<br>
+        2. Mutliptle Stock Dependencies<br><br>
+        Twitter Sentiment uses the Naive Bayes algorithm. However, it currently does not support collecting more than ~500 tweets due to a timeout limitation on Heroku's server. Background processing has not been implemented.<br><br>
+        Multiple Stock Dependencies currently uses the logistic regression, SVM, and KNN algorithms. <br><br>
+        Finally, there is no form validation or error catching. So if you get an error, it might be likely that your inputs are bad or you exceeded the timeout limitation (which again should be around ~500 tweets). <br><br>
+        Good luck! - Tim
+        </p>
+
+    </body>
+{% endblock %}

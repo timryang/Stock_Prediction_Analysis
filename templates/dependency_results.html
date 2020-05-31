@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <body>
+        <div class="leftside_dependency">
+    		<div class="lefside_dependency_form">
+        		<form action="/dependency_results" method="POST">
+
+                    <p style="color:red">Leave non-required fields empty<br>*Required fields</p>
+
+        			<h3>Stock Data Parameters:</h3>
+        			<label>Objective Ticker<span style="color: #ff0000">*</span>:</label><input type='text' name='analyzeTicker' value = {{ analyzeTicker }}><br>
+                    <label>Metric Tickers<span style="color: #ff0000">*</span>:</label><input type='text' name='metricTickers' value = {{ metricTickers }}> Comma separated<br>
+        			<label>Years of Data<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='years' value= {{ years }}> Allows decimals<br>
+                    <label>Recollect Data:</label><select name='recollectData'>
+                    {% if recollectData == True %}
+                        <option value=1>True</option>
+                        <option value=0>False</option>
+                    {% else %}
+                        <option value=0>False</option>
+                        <option value=1>True</option>
+                    {% endif %}
+                    </select><span style="color: #ff0000"> Must be true initially</span><br>
+
+        			<h3>Correlator Parameters:</h3>
+        			<label>Predict Interval<span style="color: #ff0000">*</span>:</label><input type='number' name='analyzeInterval' value={{ analyzeInterval }}> In days<br>
+                    <label>Metric Interval<span style="color: #ff0000">*</span>:</label><input type='number' name='metricInterval' value={{ metricInterval }}> In days<br>
+                    <label>% Threshold:</label><input type='number' step=0.01 name='changeThreshold' value={{ changeThreshold }}> Filter out < threshold<br>
+        			<label>Train Size<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='trainSize' value={{ trainSize }}> % of data used for training<br>
+
+                    <h3>Classifier Parameters:</h3>
+                    <label>SVM Kernel:</label><select name='SVM_kernel'>
+                    <option value='linear'>linear</option>
+                    <option value='poly'>poly</option>
+                    <option value='rbf'>rbf</option>
+                    <option value='sigmoid'>sigmoid</option>
+                    </select> Last used: {{ SVM_kernel }}<br>
+                    <label>SVM Degree</span>:</label><input type='number' name='SVM_degree' value={{ SVM_degree }}> Used with poly<br>
+                    <label>SVM Gamma:</label><select name='SVM_gamma'>
+                    {% if SVM_gamma == 'scale' %}
+                        <option value='scale'>scale</option>
+                        <option value='auto'>auto</option>
+                    {% else %}
+                        <option value='auto'>auto</option>
+                        <option value='scale'>scale</option>
+                    {% endif %}
+                    </select> N/A w/ linear<br>
+                    <label>KNN Neighbors:<span style="color: #ff0000">*</span>:</label><input type='number' name='KNN_neighbors' value={{ KNN_neighbors }}><br>
+                    <label>KNN Weighting:</label><select name='KNN_weighting'>
+                    {% if KNN_weighting == 'uniform' %}
+                        <option value='uniform'>uniform</option>
+                        <option value='distance'>distance</option>
+                    {% else %}
+                        <option value='distance'>distance</option>
+                        <option value='uniform'>uniform</option>
+                    {% endif %}
+                    </select><br><br>
+
+        			<input type='submit' value='Analyze/Predict'>
+
+        		</form>
+
+    		</div>
+            <div class="dependency_prediction">
+                <h4>Predictions:</h4>
+
+                {{ pred_df|safe }}
+
+            </div>
+        </div>
+
+        <div class="rightside_dependency_plot">
+
+            {{ script_p|safe }}
+            {{ div_p|safe }}
+
+        </div>
+
+        <div class="dependency_scatter_plot">
+            <div class="small_scatter">
+                {% if scatter_url %}
+                    {{ scatter_url|safe }}
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="dependency_tables">
+            <div class="dependency_single_table">
+                <div class="small_table">
+                    <h3>Logistic Regression:</h3>
+                    {{ report_lr|safe }}
+                    <br>
+                    {{ conf_mat_lr|safe }}
+                </div>
+            </div>
+            <div class="dependency_single_table">
+                <div class="small_table">
+                    <h3>SVM:</h3>
+                    {{ report_svm|safe }}
+                    <br>
+                    {{ conf_mat_svm|safe }}
+                </div>
+            </div>
+            <div class="dependency_single_table">
+                <div class="small_table">
+                    <h3>KNN:</h3>
+                    {{ report_knn|safe }}
+                    <br>
+                    {{ conf_mat_knn|safe }}
+                </div>
+            </div>
+        </div>
+
+    </body>
+{% endblock %}

@@ -8,7 +8,8 @@ Created on Sat May 23 19:20:16 2020
 
 from flask import Flask, render_template, request
 from bokeh.embed import components
-from Stock_NB_Analyzer import Stock_NB_Analyzer
+from Stock_NB_Analyzer.Stock_NB_Analyzer import Stock_NB_Analyzer
+from Stock_Dependency_Analyzer.Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
 from nltk.corpus import stopwords
 from sqlalchemy import create_engine
 import pandas as pd
@@ -21,9 +22,13 @@ engine = create_engine(database_URI, echo=False)
 app = Flask(__name__)
 
 @app.route('/')
-@app.route('/define_parameters', methods=['GET', 'POST'])
-def define_parameters():
-    return render_template('results.html', ticker='MRNA', years=1, userName='',\
+@app.route('/home', methods=['GET', 'POST'])
+def home():
+    return render_template('home.html')
+
+@app.route('/define_nb_parameters', methods=['GET', 'POST'])
+def define_nb_parameters():
+    return render_template('nb_results.html', ticker='MRNA', years=1, userName='',\
                            geoLocation='latitude,longitude', distance='', sinceDate='2020-03-01', untilDate='2020-05-20',\
                                querySearch='MRNA', topTweets=True, maxTweets=500, lang='en',\
                                    deltaInterval=3, trainSize=0.8,\
@@ -32,8 +37,8 @@ def define_parameters():
                                            userNamePredict='', geoLocationPredict='latitude,longitude', distancePredict='', querySearchPredict='MRNA',\
                                                topTweetsPredict=True, maxTweetsPredict=10, langPredict='en')
 
-@app.route('/results', methods=['GET', 'POST'])
-def results():
+@app.route('/nb_results', methods=['GET', 'POST'])
+def nb_results():
         
     ticker = request.form['ticker']
     years = float(request.form['years'])
@@ -70,7 +75,7 @@ def results():
     else:
         stopwordsList = []
     addStopwords = request.form['addStopwords']
-    add_stopwords_tokenized = addStopwords.split(' ')
+    add_stopwords_tokenized = addStopwords.split(',')
     if add_stopwords_tokenized:
         for word in add_stopwords_tokenized:
             stopwordsList.append(word)
@@ -134,11 +139,10 @@ def results():
     
     pred_results, pred_text = NB_analyzer.run_prediction(userNamePredict, geoLocationPredict, distancePredict, querySearchPredict,\
                            maxTweetsPredict, topTweetsPredict, langPredict, printAll=True)
-    print(pred_text)
     pred_results = pred_results.replace('\n', '<br/>')
     pred_text = pred_text.replace('\n', '<br/>')
         
-    return render_template('results.html', ticker=ticker, years=years, userName=userName,\
+    return render_template('nb_results.html', ticker=ticker, years=years, userName=userName,\
                            geoLocation=geoLocation, distance=distance, sinceDate=sinceDate, untilDate=untilDate,\
                                querySearch=querySearch, topTweets=topTweets, maxTweets=maxTweets, lang=lang,\
                                    deltaInterval=deltaInterval, trainSize=trainSize,\
@@ -152,4 +156,71 @@ def results():
                                                                distancePredict=distancePredict, querySearchPredict=querySearchPredict,\
                                                                    topTweetsPredict=topTweetsPredict, maxTweetsPredict=maxTweetsPredict, langPredict=langPredict,\
                                                                    pred_results=pred_results, pred_text=pred_text)
+        
+@app.route('/define_dependency', methods=['GET', 'POST'])
+def define_dependency_parameters():
+    return render_template('dependency_results.html', analyzeTicker='TSLA', metricTickers='GOLD,XOM', years=1, recollectData=True,\
+                           analyzeInterval=3, metricInterval=7, trainSize=0.8, SVM_gamma='scale', KNN_neighbors=3, KNN_weighting='uniform')
+
+@app.route('/dependency_results', methods=['GET', 'POST'])
+def dependency_results():
+    
+    analyzeTicker = request.form['analyzeTicker']
+    metricTickers = request.form['metricTickers']
+    metricTickers_tokenized = metricTickers.split(',')
+    years = float(request.form['years'])
+    recollectData = bool(int(request.form['recollectData']))
+    analyzeInterval = int(request.form['analyzeInterval'])
+    metricInterval = int(request.form['metricInterval'])
+    changeThreshold = request.form['changeThreshold']
+    if changeThreshold == '':
+        changeThreshold = 0
+    else:
+        changeThreshold = float(changeThreshold)
+    trainSize = float(request.form['trainSize'])
+    SVM_kernel = request.form['SVM_kernel']
+    SVM_degree = request.form['SVM_degree']
+    if SVM_degree == '':
+        SVM_degree = 3
+    else:
+        SVM_degree = int(SVM_degree)
+    SVM_gamma = request.form['SVM_gamma']
+    KNN_neighbors = int(request.form['KNN_neighbors'])
+    KNN_weighting = request.form['KNN_weighting']
+    
+    dependency_analyzer = Stock_Dependency_Analyzer()
+    if recollectData:
+        dependency_analyzer.collect_data(analyzeTicker, metricTickers_tokenized, years)
+        analyzerData = dependency_analyzer.analyzerStockData_
+        metricData = dependency_analyzer.metricStockData_
+        sqlite_connection = engine.connect()
+        analyzerData.to_sql(name='AnalyzerData', con=sqlite_connection, if_exists='replace')
+        for idx, df in enumerate(metricData):
+            df.to_sql(name='MetricData'+str(idx), con=sqlite_connection, if_exists='replace')
+        sqlite_connection.close()
+    else:
+        sqlite_connection = engine.connect()
+        analyzerData = pd.read_sql('select * from AnalyzerData', sqlite_connection)
+        metricData = [pd.read_sql('select * from MetricData' + str(idx), sqlite_connection) \
+                      for idx in range(len(metricTickers_tokenized))]
+        sqlite_connection.close()
+        dependency_analyzer.load_data(analyzerData, metricData, analyzeTicker, metricTickers_tokenized)
+    # dependency_analyzer.collect_data(analyzeTicker, metricTickers_tokenized, years)
+    p, ps = dependency_analyzer.build_correlation(analyzeInterval, metricInterval, changeFilter=changeThreshold, doHTML=True)
+    script_p, div_p = components(p)
+    report_list, conf_mat_list = dependency_analyzer.create_all_classifiers(SVM_kernel, SVM_degree, SVM_gamma, \
+                                               KNN_neighbors, KNN_weighting, \
+                                                   trainSize=trainSize, doHTML=True)
+    report_list = [report.to_html(index=False) for report in report_list]
+    conf_mat_list = [conf_mat.to_html(index=False, bold_rows=True) for conf_mat in conf_mat_list]
+    predictionDF = dependency_analyzer.run_prediction()
+    predictionDF = predictionDF.to_html(index=False)
+    
+    return render_template('dependency_results.html', analyzeTicker=analyzeTicker, metricTickers=metricTickers, years=years, recollectData=recollectData,\
+                           analyzeInterval=analyzeInterval, metricInterval=metricInterval, changeThreshold=changeThreshold,\
+                               trainSize=trainSize, SVM_kernel=SVM_kernel, SVM_degree=SVM_degree, SVM_gamma=SVM_gamma,\
+                                   KNN_neighbors=KNN_neighbors, KNN_weighting=KNN_weighting, script_p=script_p, div_p=div_p, scatter_url=ps,\
+                                       report_lr=report_list[0], conf_mat_lr=conf_mat_list[0],\
+                                           report_svm=report_list[1], conf_mat_svm=conf_mat_list[1],\
+                                               report_knn=report_list[2], conf_mat_knn=conf_mat_list[2], pred_df=predictionDF)
         

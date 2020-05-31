@@ -4,7 +4,7 @@ Created on Fri May 22 16:04:37 2020
 
 @author: timot
 """
-from commonFunctions import *
+from CommonFunctions.commonFunctions import *
 
 #%%  Functions
 
