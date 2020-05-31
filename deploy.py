@@ -8,8 +8,8 @@ Created on Sat May 23 19:20:16 2020
 
 from flask import Flask, render_template, request
 from bokeh.embed import components
-from Stock_NB_Analyzer.Stock_NB_Analyzer import Stock_NB_Analyzer
-from Stock_Dependency_Analyzer.Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
+from Stock_NB_Analyzer import Stock_NB_Analyzer
+from Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
 from nltk.corpus import stopwords
 from sqlalchemy import create_engine
 import pandas as pd
