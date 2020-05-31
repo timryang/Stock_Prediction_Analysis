@@ -23,7 +23,7 @@ from nltk.corpus import stopwords
 import time
 import datetime
 from bokeh.plotting import figure
-from bokeh.palettes import Dark2_5 as palette
+from bokeh.palettes import Dark2_8 as palette
 from bokeh.layouts import row
 from CommonFunctions.TweetCriteria_TRY import TweetCriteria as TC_TRY
 from mpl_toolkits.mplot3d import Axes3D

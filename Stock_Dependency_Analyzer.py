@@ -104,8 +104,8 @@ class Stock_Dependency_Analyzer():
         p = plot_values(x_values, y_values, labels, x_label, y_label, title, isDates=True, isBokeh=doHTML)
         
         # Plot diff vs dates
-        x_values_diff = [dates[:-1], analyzeDates]
-        y_values_diff = [np.diff(analyzeCloseData)/analyzeCloseData[:-1], analyzePercDiff]
+        x_values_diff = [analyzeDates]
+        y_values_diff = [analyzePercDiff]
         if len(self.metricTickers_) < 2:
             y_values_diff.append(metricPercDiff)
             x_values_diff.append(metricDates)
@@ -113,7 +113,6 @@ class Stock_Dependency_Analyzer():
             for idx, val in enumerate(self.metricTickers_):
                 x_values_diff.append(metricDates)
                 y_values_diff.append(metricPercDiff[:,idx])
-        labels.insert(0, self.analyzeTicker_ + ' Daily')
         title_diff = 'Interval % Change'
         y_label_diff = '% Change'
         p_delta = plot_values(x_values_diff, y_values_diff, labels, x_label, y_label_diff, title_diff, isDates=True, isBokeh=doHTML)

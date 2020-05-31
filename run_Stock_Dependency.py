@@ -6,14 +6,14 @@ Created on Sat May 30 18:15:36 2020
 """
 
 
-from Stock_Dependency_Analyzer.Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
+from Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
 
 #%% Inputs
 doHTML = False
 
 # Stock data
 analyzeTicker = 'TSLA'
-metricTickers = ['GOLD','XOM','MRNA','GOOG']
+metricTickers = ['GOLD','XOM','MRNA','GOOG','MRNA']
 years = 1
 
 # Correlator data
