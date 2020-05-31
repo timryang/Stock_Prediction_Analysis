@@ -61,7 +61,7 @@ class Stock_Dependency_Analyzer():
         
         # Compute analyze percent change
         analyzeDates = dates[metricInterval:-analyzeInterval]
-        analyzeCloseDiff = np.array([analyzeCloseData[i+analyzeInterval]-val \
+        analyzeCloseDiff = np.array([analyzeCloseData[i+metricInterval+analyzeInterval]-val \
                                          for i, val in enumerate(analyzeCloseData[metricInterval:-analyzeInterval])])
         analyzePercDiff = analyzeCloseDiff / analyzeCloseData[metricInterval:-analyzeInterval]
         

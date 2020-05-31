@@ -6,21 +6,21 @@ Created on Sat May 30 18:15:36 2020
 """
 
 
-from Stock_Dependency_Analyzer.Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
+from Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
 
 #%% Inputs
-doHTML = True
+doHTML = False
 
 # Stock data
-analyzeTicker = 'QQQ'
-metricTickers = ['GOLD','XOM', 'TSLA']
-years = 2
+analyzeTicker = 'DAL'
+metricTickers = ['GOLD','XOM','MRNA']
+years = 1
 
 # Correlator data
 trainSize = 0.8
 analyzeInterval = 3
-metricInterval = 7
-changeFilter = 0.015
+metricInterval = 3
+changeFilter = 0
 
 # SVM parameters:
 SVM_kernel = 'sigmoid' # {‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’}
