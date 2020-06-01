@@ -54,7 +54,18 @@
                         <option value='distance'>distance</option>
                         <option value='uniform'>uniform</option>
                     {% endif %}
-                    </select><br><br>
+                    </select><br>
+                    <label>RF Estimators:<span style="color: #ff0000">*</span>:</label><input type='number' name='RF_n_estimators' value={{ RF_n_estimators }}><br>
+                    <label>RF Criterion:</label><select name='RF_criterion'>
+                    {% if RF_criterion == 'gini' %}
+                        <option value='gini'>gini</option>
+                        <option value='entropy'>entropy</option>
+                    {% else %}
+                        <option value='entropy'>entropy</option>
+                        <option value='gini'>gini</option>
+                    {% endif %}
+                    </select><br>
+                    <br>
 
         			<input type='submit' value='Analyze/Predict'>
 
@@ -107,6 +118,14 @@
                     {{ report_knn|safe }}
                     <br>
                     {{ conf_mat_knn|safe }}
+                </div>
+            </div>
+            <div class="dependency_single_table">
+                <div class="small_table">
+                    <h3>Random Forest:</h3>
+                    {{ report_rf|safe }}
+                    <br>
+                    {{ conf_mat_rf|safe }}
                 </div>
             </div>
         </div>

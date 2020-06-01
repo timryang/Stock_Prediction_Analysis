@@ -9,6 +9,7 @@ from CommonFunctions.commonFunctions import *
 from sklearn.linear_model import LogisticRegression
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
+from sklearn.ensemble import RandomForestClassifier
 
 #%% Stock dependency class
 
@@ -25,6 +26,7 @@ class Stock_Dependency_Analyzer():
         self.lr_clf_ = LogisticRegression()
         self.svm_clf_ = svm.SVC()
         self.knn_clf_ = KNeighborsClassifier()
+        self.rf_clf_ = RandomForestClassifier()
         
     def collect_data(self, analyzeTicker, metricTickers, years):
         self.analyzerStockData_ = collect_stock_data(analyzeTicker, years)
@@ -136,6 +138,7 @@ class Stock_Dependency_Analyzer():
         
     def create_all_classifiers(self, SVM_kernel, SVM_degree, SVM_gamma,\
                                KNN_neighbors, KNN_weights,\
+                                   RF_n_estimators, RF_criterion,
                                    trainSize=0.8, doHTML=False):
         
         # Train test split
@@ -161,8 +164,15 @@ class Stock_Dependency_Analyzer():
         report_knn, p_knn = classifier_statistics(xTest, yTest, self.knn_clf_, doHTML=doHTML)
         print("\n")
         
-        report_list = [report_lr, report_svm, report_knn]
-        p_list = [p_lr, p_svm, p_knn]
+        # RF
+        self.rf_clf_ = RandomForestClassifier(n_estimators=RF_n_estimators, criterion=RF_criterion)
+        self.rf_clf_.fit(xTrain, yTrain)
+        print("Random Forest Results:")
+        report_rf, p_rf = classifier_statistics(xTest, yTest, self.rf_clf_, doHTML=doHTML)
+        print("\n")
+        
+        report_list = [report_lr, report_svm, report_knn, report_rf]
+        p_list = [p_lr, p_svm, p_knn, p_rf]
         
         return report_list, p_list
         
@@ -170,12 +180,14 @@ class Stock_Dependency_Analyzer():
         lr_predict = self.lr_clf_.predict(self.predictors_)
         svm_predict = self.svm_clf_.predict(self.predictors_)
         knn_predict = self.knn_clf_.predict(self.predictors_)
+        rf_predict = self.rf_clf_.predict(self.predictors_)
         
         reportDF = pd.DataFrame()
         reportDF['Days From Today'] = pd.Series(list(range(1,len(lr_predict)+1)))
         reportDF['Log Reg'] = pd.Series(lr_predict)
         reportDF['SVM'] = pd.Series(svm_predict)
         reportDF['KNN'] = pd.Series(knn_predict)
+        reportDF['Rand Forest'] = pd.Series(rf_predict)
         
         print(reportDF)
         

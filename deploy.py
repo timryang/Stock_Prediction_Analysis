@@ -160,7 +160,8 @@ def nb_results():
 @app.route('/define_dependency', methods=['GET', 'POST'])
 def define_dependency_parameters():
     return render_template('dependency_results.html', analyzeTicker='TSLA', metricTickers='GOLD,XOM', years=1, recollectData=True,\
-                           analyzeInterval=3, metricInterval=7, trainSize=0.8, SVM_gamma='scale', KNN_neighbors=3, KNN_weighting='uniform')
+                           analyzeInterval=3, metricInterval=7, trainSize=0.8, SVM_gamma='scale', KNN_neighbors=4, KNN_weighting='uniform',\
+                               RF_n_estimators=100)
 
 @app.route('/dependency_results', methods=['GET', 'POST'])
 def dependency_results():
@@ -187,6 +188,8 @@ def dependency_results():
     SVM_gamma = request.form['SVM_gamma']
     KNN_neighbors = int(request.form['KNN_neighbors'])
     KNN_weighting = request.form['KNN_weighting']
+    RF_n_estimators = int(request.form['RF_n_estimators'])
+    RF_criterion = request.form['RF_criterion']
     
     dependency_analyzer = Stock_Dependency_Analyzer()
     if recollectData:
@@ -210,6 +213,7 @@ def dependency_results():
     script_p, div_p = components(p)
     report_list, conf_mat_list = dependency_analyzer.create_all_classifiers(SVM_kernel, SVM_degree, SVM_gamma, \
                                                KNN_neighbors, KNN_weighting, \
+                                                   RF_n_estimators, RF_criterion, \
                                                    trainSize=trainSize, doHTML=True)
     report_list = [report.to_html(index=False) for report in report_list]
     conf_mat_list = [conf_mat.to_html(index=False, bold_rows=True) for conf_mat in conf_mat_list]
@@ -219,8 +223,11 @@ def dependency_results():
     return render_template('dependency_results.html', analyzeTicker=analyzeTicker, metricTickers=metricTickers, years=years, recollectData=recollectData,\
                            analyzeInterval=analyzeInterval, metricInterval=metricInterval, changeThreshold=changeThreshold,\
                                trainSize=trainSize, SVM_kernel=SVM_kernel, SVM_degree=SVM_degree, SVM_gamma=SVM_gamma,\
-                                   KNN_neighbors=KNN_neighbors, KNN_weighting=KNN_weighting, script_p=script_p, div_p=div_p, scatter_url=ps,\
+                                   KNN_neighbors=KNN_neighbors, KNN_weighting=KNN_weighting, RF_n_estimators=RF_n_estimators,\
+                                       RF_criterion=RF_criterion, script_p=script_p, div_p=div_p, scatter_url=ps,\
                                        report_lr=report_list[0], conf_mat_lr=conf_mat_list[0],\
                                            report_svm=report_list[1], conf_mat_svm=conf_mat_list[1],\
-                                               report_knn=report_list[2], conf_mat_knn=conf_mat_list[2], pred_df=predictionDF)
+                                               report_knn=report_list[2], conf_mat_knn=conf_mat_list[2], \
+                                                   report_rf=report_list[3], conf_mat_rf=conf_mat_list[3],\
+                                                       pred_df=predictionDF)
         
