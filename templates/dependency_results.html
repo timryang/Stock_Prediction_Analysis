@@ -75,7 +75,7 @@
             <div class="dependency_prediction">
                 <h4>Predictions:</h4>
 
-                {{ pred_df|safe }}
+                {{ pred_df|safe }} <br>
 
             </div>
         </div>
@@ -87,46 +87,36 @@
 
         </div>
 
-        <div class="dependency_scatter_plot">
-            <div class="small_scatter">
-                {% if scatter_url %}
-                    {{ scatter_url|safe }}
-                {% endif %}
-            </div>
+        <div class="dependency_scatter_plot small_scatter">
+            {% if scatter_url %}
+                {{ scatter_url|safe }}
+            {% endif %}
         </div>
 
         <div class="dependency_tables">
-            <div class="dependency_single_table">
-                <div class="small_table">
-                    <h3>Logistic Regression:</h3>
-                    {{ report_lr|safe }}
-                    <br>
-                    {{ conf_mat_lr|safe }}
-                </div>
+            <div class="dependency_single_table small_table">
+                <h3>Logistic Regression:</h3>
+                {{ report_lr|safe }}
+                <br>
+                {{ conf_mat_lr|safe }}
             </div>
-            <div class="dependency_single_table">
-                <div class="small_table">
-                    <h3>SVM:</h3>
-                    {{ report_svm|safe }}
-                    <br>
-                    {{ conf_mat_svm|safe }}
-                </div>
+            <div class="dependency_single_table small_table">
+                <h3>SVM:</h3>
+                {{ report_svm|safe }}
+                <br>
+                {{ conf_mat_svm|safe }}
             </div>
-            <div class="dependency_single_table">
-                <div class="small_table">
-                    <h3>KNN:</h3>
-                    {{ report_knn|safe }}
-                    <br>
-                    {{ conf_mat_knn|safe }}
-                </div>
+            <div class="dependency_single_table small_table">
+                <h3>KNN:</h3>
+                {{ report_knn|safe }}
+                <br>
+                {{ conf_mat_knn|safe }}
             </div>
-            <div class="dependency_single_table">
-                <div class="small_table">
-                    <h3>Random Forest:</h3>
-                    {{ report_rf|safe }}
-                    <br>
-                    {{ conf_mat_rf|safe }}
-                </div>
+            <div class="dependency_single_table small_table">
+                <h3>Random Forest:</h3>
+                {{ report_rf|safe }}
+                <br>
+                {{ conf_mat_rf|safe }}
             </div>
         </div>
 

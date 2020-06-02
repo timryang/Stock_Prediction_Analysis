@@ -120,7 +120,7 @@ class Stock_Dependency_Analyzer():
         p_delta = plot_values(x_values_diff, y_values_diff, labels, x_label, y_label_diff, title_diff, isDates=True, isBokeh=doHTML)
         
         if doHTML:
-            p = bokeh.layouts.row(p, p_delta)
+            p = bokeh.layouts.row(p, p_delta, sizing_mode='scale_width')
 
         # Plot scatter
         if len(self.metricTickers_) <= 3:

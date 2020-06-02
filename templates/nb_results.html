@@ -120,18 +120,12 @@
             </div>
             <div class="twitter_text_2">
                 <h4>Classifier Stats:</h4>
-                <div class="small">
-                    {{ report|safe }}
-                </div>
-                <div class="small">
-                    {{ confusion_matrix|safe }}
-                </div>
+                {{ report|safe }}<br>
+                {{ confusion_matrix|safe }}
             </div>
             <div class="twitter_text_3">
                 <h4>Most Informative Words:</h4>
-                <div class="small">
-                    {{ most_inform|safe }}
-                </div>
+                {{ most_inform|safe }}
             </div>
         </div>
 
