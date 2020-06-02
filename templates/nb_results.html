@@ -51,6 +51,7 @@
 
                     <h3>Classifier Parameters:</h3>
                     <label>Analysis Interval<span style="color: #ff0000">*</span>:</label><input type='number' name='deltaInterval' value={{ deltaInterval }}> In days<br>
+                    <label>% Threshold</label><input type='number' step=0.01 name='changeThreshold' value={{ changeThreshold }}> Filter out < threshold<br>
                     <label>Train Size<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='trainSize' value={{ trainSize }}> % of data used for training<br>
                     <label>Use IDF:</label><select name='useIDF'>
                     {% if useIDF == True %}

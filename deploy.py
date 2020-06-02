@@ -31,7 +31,7 @@ def define_nb_parameters():
     return render_template('nb_results.html', ticker='MRNA', years=1, userName='',\
                            geoLocation='latitude,longitude', distance='', sinceDate='2020-03-01', untilDate='2020-05-20',\
                                querySearch='MRNA', topTweets=True, maxTweets=500, lang='en',\
-                                   deltaInterval=3, trainSize=0.8,\
+                                   deltaInterval=3, changeThreshold=0.02, trainSize=0.8,\
                                        useIDF=True, do_downsample=True, useStopwords=True, addStopwords='',\
                                            recollectTweets=True, recollectData=True,\
                                            userNamePredict='', geoLocationPredict='latitude,longitude', distancePredict='', querySearchPredict='MRNA',\
@@ -66,6 +66,11 @@ def nb_results():
     if (lang == 'None') or (lang == ''):
         lang = None
     deltaInterval = int(request.form['deltaInterval'])
+    changeThreshold = request.form['changeThreshold']
+    if changeThreshold == '':
+        changeThreshold = 0
+    else:
+        changeThreshold = float(changeThreshold)
     trainSize = float(request.form['trainSize'])
     useIDF = bool(int(request.form['useIDF']))
     do_downsample = bool(int(request.form['do_downsample']))
@@ -110,7 +115,7 @@ def nb_results():
         sqlite_connection.close()
         NB_analyzer.load_data(dataDF)
     
-    count_report = NB_analyzer.correlate_tweets(deltaInterval)
+    count_report = NB_analyzer.correlate_tweets(deltaInterval, changeThreshold)
     count_report = count_report.replace('\n', '<br/>')
     p = NB_analyzer.plot_data(deltaInterval, isBokeh=True)
     script_p, div_p = components(p)
@@ -145,7 +150,7 @@ def nb_results():
     return render_template('nb_results.html', ticker=ticker, years=years, userName=userName,\
                            geoLocation=geoLocation, distance=distance, sinceDate=sinceDate, untilDate=untilDate,\
                                querySearch=querySearch, topTweets=topTweets, maxTweets=maxTweets, lang=lang,\
-                                   deltaInterval=deltaInterval, trainSize=trainSize,\
+                                   deltaInterval=deltaInterval, changeThreshold=changeThreshold, trainSize=trainSize,\
                                        useIDF=useIDF, do_downsample=do_downsample, useStopwords=useStopwords,\
                                            addStopwords=addStopwords,\
                                            script_p=script_p, div_p=div_p,\

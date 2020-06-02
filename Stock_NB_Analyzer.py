@@ -39,19 +39,20 @@ class Stock_NB_Analyzer:
         else:
             self.stockData_ = pd.read_csv(directory)
         
-    def correlate_tweets(self, deltaInterval):
+    def correlate_tweets(self, deltaInterval, changeFilter=0):
         
         stockClose = self.stockData_['Close'].values
-        diffInterval = [stockClose[i+deltaInterval]-val for i, val in enumerate(stockClose[:-deltaInterval])]
-        stockDates = list(self.stockData_['Date'])
+        diffInterval = np.array([stockClose[i+deltaInterval]-val for i, val in enumerate(stockClose[:-deltaInterval])])
+        diffInterval = diffInterval/stockClose[:-deltaInterval]
+        stockDates = self.stockData_['Date'].values
         stockDates = stockDates[:-deltaInterval]
         
-        resultsClose = np.where(np.array(diffInterval) > 0, 'Positive', 'Negative')
+        resultsClose = np.where(diffInterval > 0, 'Positive', 'Negative')
+        validIdx = np.where(np.abs(diffInterval) > changeFilter)
         
         lastDate = pd.to_datetime(stockDates[-1])
-        tweetDatesAll = [dt.date() for dt in pd.to_datetime(self.tweetsDF_['Date'])]
-        validIdx = [idx for idx, val in enumerate(tweetDatesAll) if val <= lastDate]
-        tweetsDF_short = self.tweetsDF_.iloc[validIdx]
+        tweetDatesAll = np.array([dt.date() for dt in pd.to_datetime(self.tweetsDF_['Date'])])
+        tweetsDF_short = self.tweetsDF_.iloc[np.where(tweetDatesAll <= lastDate)]
         tweetDates_short = [dt.date() for dt in pd.to_datetime(tweetsDF_short['Date'])]
         
         tweetResults = []
@@ -64,11 +65,18 @@ class Stock_NB_Analyzer:
             while currentStockDayStr not in stockDates:
                 currentStockDay = currentStockDay - datetime.timedelta(days = 1)
                 currentStockDayStr = str(currentStockDay)
-            result = resultsClose[find_idx(stockDates, currentStockDayStr)]
-            tweetResults.append(result[0])
-            
-        numPosDays = list(resultsClose).count('Positive')
-        numNegDays = list(resultsClose).count('Negative')
+            matchIdx = np.where(stockDates == currentStockDayStr)
+            if matchIdx[0] in validIdx[0]:
+                tweetResults.append(resultsClose[matchIdx][0])
+            else:
+                tweetResults.append('Non-valid')
+        
+        validTweetsIdx = np.where(np.array(tweetResults) != 'Non-valid')
+        tweetResults = list(np.array(tweetResults)[validTweetsIdx])
+        tweetsDF_short = tweetsDF_short.iloc[validTweetsIdx]
+        
+        numPosDays = list(resultsClose[validIdx]).count('Positive')
+        numNegDays = list(resultsClose[validIdx]).count('Negative')
         
         numPosTweets = tweetResults.count('Positive')
         numNegTweets = tweetResults.count('Negative')
@@ -113,8 +121,10 @@ class Stock_NB_Analyzer:
         stockClose = self.stockData_['Close'].values
         
         diffClose = np.diff(stockClose)
+        diffClose = diffClose/stockClose[:-1]
         diffDates = dates[:-1]
-        diffInterval = [stockClose[i+deltaInterval]-val for i, val in enumerate(stockClose[:-deltaInterval])]
+        diffInterval = np.array([stockClose[i+deltaInterval]-val for i, val in enumerate(stockClose[:-deltaInterval])])
+        diffInterval = diffInterval/stockClose[:-deltaInterval]
         diffIntDates = dates[:-deltaInterval]
         
         x_values_plt1 = [dates, unique_tweet_dates]
@@ -129,13 +139,14 @@ class Stock_NB_Analyzer:
         labels_plt2 = ['Daily', 'Interval']
         title_plt2 = 'Change By Interval'
         xlabel_plt2 = 'Date'
-        ylabel_plt2 = 'Change'
+        ylabel_plt2 = '% Change'
         
         p = plot_values(x_values_plt1, y_values_plt1, labels_plt1, xlabel_plt1, ylabel_plt1, title_plt1, isDates=True, isBokeh=isBokeh)
         p_delta = plot_values(x_values_plt2, y_values_plt2, labels_plt2, xlabel_plt2, ylabel_plt2, title_plt2, isDates=True, isBokeh=isBokeh)
         
         if isBokeh:
-            p = row(p, p_delta)
+            p = bokeh.layouts.row(p, p_delta)
+            p.sizing_mode = 'scale_both'
         else:
             p = "used matplotlib"
         

@@ -8,6 +8,8 @@
 
       <meta charset="utf-8" />
 
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
       <script src="https://cdn.bokeh.org/bokeh/release/bokeh-1.4.0.min.js" crossorigin="anonymous"></script>
       <script src="https://cdn.bokeh.org/bokeh/release/bokeh-widgets-1.4.0.min.js" crossorigin="anonymous"></script>
       <script src="https://cdn.bokeh.org/bokeh/release/bokeh-tables-1.4.0.min.js" crossorigin="anonymous"></script>
@@ -30,6 +32,17 @@
           font-family: Arial, Helvetica, sans-serif;
           font-size: 90%;
         }
+        table{
+          width: 100%;
+          border-collapse: collapse;
+        }
+        img {
+          width: 100%;
+          height: auto;
+        }
+        td, th {
+          text-align: right;
+        }
 
         .small {
           transform: scale(0.9, 0.9);
@@ -42,7 +55,7 @@
 
         .leftside_twitter_form {
           width: 30%;
-          height: 850px;
+          height: 875px;
           float: left;
           outline: 1px dotted black;
           background-color: ivory;
@@ -77,22 +90,21 @@
         }
         .twitter_pred_area {
           width: 70%;
-          height: 200px;
+          height: 225px;
           float: left;
           outline: 3px dotted green;
-          background-color: darkseagreen;
         }
         .twitter_results_area {
           background-color: lightsteelblue;
           width: 20%;
-          height: 200px;
+          height: 225px;
           float: left;
           outline: 3px dotted green;
         }
         .tweet_results {
           background-color: ivory;
           width: 80%;
-          height: 200px;
+          height: 225px;
           overflow-y: scroll;
           float: left;
         }
@@ -112,7 +124,7 @@
           width: 100%;
           float: left;
           outline: 3px dotted green;
-          background-color: darkseagreen;
+          background-color: lightsteelblue;
         }
         .rightside_dependency_plot {
           width: 70%;

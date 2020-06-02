@@ -13,7 +13,7 @@ ticker = 'MRNA'
 years = 1
 
 # Get new if false
-loadTweets = False
+loadTweets = True
 loadData = True
 
 # Classifier tweet parameters (only used if loadTweets = False):
@@ -31,8 +31,9 @@ lang = 'en'
 tweetDir = './CSV_Files/MRNA_Tweets.csv'
 dataDir = './CSV_Files/MRNA.csv'
 
-# Change interval
+# Correlation parameters
 deltaInterval = 2 # days
+changeFilter = 0.02 # %
 
 # Classifier parameters
 trainSize = 0.8
@@ -64,7 +65,7 @@ if loadData:
     NB_analyzer.load_data(dataDir)
 else:
     NB_analyzer.collect_data(ticker, years)
-NB_analyzer.correlate_tweets(deltaInterval)
+NB_analyzer.correlate_tweets(deltaInterval, changeFilter)
 NB_analyzer.plot_data(deltaInterval)
 NB_analyzer.create_classifier(trainSize, stopwordsList, useIDF, do_downsample, do_stat, numFeatures)
 NB_analyzer.run_prediction(userName_predict, geoLocation_predict, distance_predict, txtSearch_predict,\
