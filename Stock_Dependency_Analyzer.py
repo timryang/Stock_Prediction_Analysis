@@ -10,6 +10,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.preprocessing import StandardScaler
 
 #%% Stock dependency class
 
@@ -23,6 +24,7 @@ class Stock_Dependency_Analyzer():
         self.stockResults_ = np.array([])
         self.metric_filt_ = np.array([])
         self.predictors_ = np.array([])
+        self.scaleTF_ = StandardScaler()
         self.lr_clf_ = LogisticRegression()
         self.svm_clf_ = svm.SVC()
         self.knn_clf_ = KNeighborsClassifier()
@@ -136,7 +138,8 @@ class Stock_Dependency_Analyzer():
         
         return p, ps
         
-    def create_all_classifiers(self, SVM_kernel, SVM_degree, SVM_gamma,\
+    def create_all_classifiers(self, c_lr, scaleSVM, c_svm,\
+                               SVM_kernel, SVM_degree, coeff_svm, SVM_gamma,\
                                KNN_neighbors, KNN_weights,\
                                    RF_n_estimators, RF_criterion,
                                    trainSize=0.8, doHTML=False):
@@ -146,15 +149,20 @@ class Stock_Dependency_Analyzer():
                                                 train_size=trainSize, random_state=42)
             
         # Logistic regression
-        self.lr_clf_ = LogisticRegression().fit(xTrain, yTrain)
+        self.lr_clf_ = LogisticRegression(C=c_lr).fit(xTrain, yTrain)
         print("Logistic Regression Results:")
         report_lr, p_lr = classifier_statistics(xTest, yTest, self.lr_clf_, doHTML=doHTML)
         print("\n")
         
         # SVM
-        self.svm_clf_ = svm.SVC(kernel=SVM_kernel, degree=SVM_degree, gamma=SVM_gamma).fit(xTrain, yTrain)
+        if scaleSVM:
+            self.scaleTF_ = StandardScaler().fit(xTest)
+            xTest_svm = self.scaleTF_.transform(xTest)
+        else:
+            xTest_svm = xTest
+        self.svm_clf_ = svm.SVC(C=c_svm, kernel=SVM_kernel, degree=SVM_degree, coef0=coeff_svm, gamma=SVM_gamma).fit(xTrain, yTrain)
         print("SVM Results:")
-        report_svm, p_svm = classifier_statistics(xTest, yTest, self.svm_clf_, doHTML=doHTML)
+        report_svm, p_svm = classifier_statistics(xTest_svm, yTest, self.svm_clf_, doHTML=doHTML)
         print("\n")
         
         # KNN
@@ -176,9 +184,13 @@ class Stock_Dependency_Analyzer():
         
         return report_list, p_list
         
-    def run_prediction(self):
+    def run_prediction(self, scaleSVM):
         lr_predict = self.lr_clf_.predict(self.predictors_)
-        svm_predict = self.svm_clf_.predict(self.predictors_)
+        if scaleSVM:
+            predictors_svm = self.scaleTF_.transform(self.predictors_)
+        else:
+            predictors_svm = self.predictors_
+        svm_predict = self.svm_clf_.predict(predictors_svm)
         knn_predict = self.knn_clf_.predict(self.predictors_)
         rf_predict = self.rf_clf_.predict(self.predictors_)
         

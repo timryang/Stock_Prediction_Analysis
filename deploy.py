@@ -164,8 +164,8 @@ def nb_results():
         
 @app.route('/define_dependency', methods=['GET', 'POST'])
 def define_dependency_parameters():
-    return render_template('dependency_results.html', analyzeTicker='TSLA', metricTickers='GOLD,XOM', years=1, recollectData=True,\
-                           analyzeInterval=3, metricInterval=7, trainSize=0.8, SVM_gamma='scale', KNN_neighbors=4, KNN_weighting='uniform',\
+    return render_template('dependency_results.html', analyzeTicker='LUV', metricTickers='NDAQ,XOM', years=1, recollectData=True,\
+                           analyzeInterval=3, metricInterval=7, trainSize=0.8, c_lr=1, scaleSVM=True, c_svm=1, SVM_gamma='scale', KNN_neighbors=4, KNN_weighting='uniform',\
                                RF_n_estimators=100)
 
 @app.route('/dependency_results', methods=['GET', 'POST'])
@@ -184,13 +184,26 @@ def dependency_results():
     else:
         changeThreshold = float(changeThreshold)
     trainSize = float(request.form['trainSize'])
+    c_lr = float(request.form['c_lr'])
+    scaleSVM = bool(int(request.form['scaleSVM']))
+    print(scaleSVM)
+    c_svm = float(request.form['c_svm'])
     SVM_kernel = request.form['SVM_kernel']
     SVM_degree = request.form['SVM_degree']
     if SVM_degree == '':
         SVM_degree = 3
     else:
         SVM_degree = int(SVM_degree)
+    coeff_svm = request.form['coeff_svm']
+    if coeff_svm == '':
+        coeff_svm = 0
+    else:
+        coeff_svm = float(coeff_svm)
     SVM_gamma = request.form['SVM_gamma']
+    try:
+        SVM_gamma = float(SVM_gamma)
+    except:
+        SVM_gamma = SVM_gamma
     KNN_neighbors = int(request.form['KNN_neighbors'])
     KNN_weighting = request.form['KNN_weighting']
     RF_n_estimators = int(request.form['RF_n_estimators'])
@@ -216,18 +229,18 @@ def dependency_results():
     # dependency_analyzer.collect_data(analyzeTicker, metricTickers_tokenized, years)
     p, ps = dependency_analyzer.build_correlation(analyzeInterval, metricInterval, changeFilter=changeThreshold, doHTML=True)
     script_p, div_p = components(p)
-    report_list, conf_mat_list = dependency_analyzer.create_all_classifiers(SVM_kernel, SVM_degree, SVM_gamma, \
+    report_list, conf_mat_list = dependency_analyzer.create_all_classifiers(c_lr, scaleSVM, c_svm, SVM_kernel, SVM_degree, coeff_svm, SVM_gamma, \
                                                KNN_neighbors, KNN_weighting, \
                                                    RF_n_estimators, RF_criterion, \
                                                    trainSize=trainSize, doHTML=True)
     report_list = [report.to_html(index=False) for report in report_list]
     conf_mat_list = [conf_mat.to_html(index=False, bold_rows=True) for conf_mat in conf_mat_list]
-    predictionDF = dependency_analyzer.run_prediction()
+    predictionDF = dependency_analyzer.run_prediction(scaleSVM)
     predictionDF = predictionDF.to_html(index=False)
     
     return render_template('dependency_results.html', analyzeTicker=analyzeTicker, metricTickers=metricTickers, years=years, recollectData=recollectData,\
                            analyzeInterval=analyzeInterval, metricInterval=metricInterval, changeThreshold=changeThreshold,\
-                               trainSize=trainSize, SVM_kernel=SVM_kernel, SVM_degree=SVM_degree, SVM_gamma=SVM_gamma,\
+                               trainSize=trainSize, c_lr=c_lr, scaleSVM=scaleSVM, c_svm=c_svm, SVM_kernel=SVM_kernel, SVM_degree=SVM_degree, coeff_svm=coeff_svm, SVM_gamma=SVM_gamma,\
                                    KNN_neighbors=KNN_neighbors, KNN_weighting=KNN_weighting, RF_n_estimators=RF_n_estimators,\
                                        RF_criterion=RF_criterion, script_p=script_p, div_p=div_p, scatter_url=ps,\
                                        report_lr=report_list[0], conf_mat_lr=conf_mat_list[0],\

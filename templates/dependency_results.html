@@ -26,26 +26,30 @@
         			<label>Predict Interval<span style="color: #ff0000">*</span>:</label><input type='number' name='analyzeInterval' value={{ analyzeInterval }}> In days<br>
                     <label>Metric Interval<span style="color: #ff0000">*</span>:</label><input type='number' name='metricInterval' value={{ metricInterval }}> In days<br>
                     <label>% Threshold:</label><input type='number' step=0.01 name='changeThreshold' value={{ changeThreshold }}> Filter out < threshold<br>
-        			<label>Train Size<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='trainSize' value={{ trainSize }}> % of data used for training<br>
+        			<label>Train Size<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='trainSize' value={{ trainSize }}> % data for training<br>
 
                     <h3>Classifier Parameters:</h3>
+                    <label>LR C<span style="color: #ff0000">*</span>:</label><input type='number' step=0.001 name='c_lr' value={{ c_lr }}> Inverse regulation<br>
+                    <label>Standardize SVM:</label><select name='scaleSVM'>
+                    {% if scaleSVM == True %}
+                        <option value=1>True</option>
+                        <option value=0>False</option>
+                    {% else %}
+                        <option value=0>False</option>
+                        <option value=1>True</option>
+                    {% endif %}
+                    </select> Zero mean unit var</span><br>
+                    <label>SVM C<span style="color: #ff0000">*</span>:</label><input type='number' step=0.001 name='c_svm' value={{ c_svm }}> Inverse regulation<br>
                     <label>SVM Kernel:</label><select name='SVM_kernel'>
+                    <option value='rbf'>rbf</option>
                     <option value='linear'>linear</option>
                     <option value='poly'>poly</option>
-                    <option value='rbf'>rbf</option>
                     <option value='sigmoid'>sigmoid</option>
                     </select> Last used: {{ SVM_kernel }}<br>
-                    <label>SVM Degree</span>:</label><input type='number' name='SVM_degree' value={{ SVM_degree }}> Used with poly<br>
-                    <label>SVM Gamma:</label><select name='SVM_gamma'>
-                    {% if SVM_gamma == 'scale' %}
-                        <option value='scale'>scale</option>
-                        <option value='auto'>auto</option>
-                    {% else %}
-                        <option value='auto'>auto</option>
-                        <option value='scale'>scale</option>
-                    {% endif %}
-                    </select> N/A w/ linear<br>
-                    <label>KNN Neighbors:<span style="color: #ff0000">*</span>:</label><input type='number' name='KNN_neighbors' value={{ KNN_neighbors }}><br>
+                    <label>SVM Degree:</label><input type='number' name='SVM_degree' value={{ SVM_degree }}> Used with poly<br>
+                    <label>SVM Coeff:</label><input type='number' step=0.001 name='coeff_svm' value={{ coeff_svm }}> Poly/sigmoid coeff<br>
+                    <label>SVM Gamma:</label><input type='text' name='SVM_gamma' value={{ SVM_gamma }}></select> scale/auto/float<br>
+                    <label>KNN Neighbors<span style="color: #ff0000">*</span>:</label><input type='number' name='KNN_neighbors' value={{ KNN_neighbors }}><br>
                     <label>KNN Weighting:</label><select name='KNN_weighting'>
                     {% if KNN_weighting == 'uniform' %}
                         <option value='uniform'>uniform</option>
@@ -55,7 +59,7 @@
                         <option value='uniform'>uniform</option>
                     {% endif %}
                     </select><br>
-                    <label>RF Estimators:<span style="color: #ff0000">*</span>:</label><input type='number' name='RF_n_estimators' value={{ RF_n_estimators }}><br>
+                    <label>RF Estimators<span style="color: #ff0000">*</span>:</label><input type='number' name='RF_n_estimators' value={{ RF_n_estimators }}><br>
                     <label>RF Criterion:</label><select name='RF_criterion'>
                     {% if RF_criterion == 'gini' %}
                         <option value='gini'>gini</option>
