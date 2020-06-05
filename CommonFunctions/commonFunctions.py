@@ -30,7 +30,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import io
 import base64
 from sklearn.model_selection import cross_validate
-from scipy.sparse import csr_matrix
 
 warnings.filterwarnings("ignore")
 

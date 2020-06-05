@@ -165,7 +165,7 @@ def nb_results():
 @app.route('/define_dependency', methods=['GET', 'POST'])
 def define_dependency_parameters():
     return render_template('dependency_results.html', analyzeTicker='DAL', metricTickers='NDAQ,XOM', years=3, recollectData=True,\
-                           analyzeInterval=3, metricInterval=7, changeThreshold=0.02, trainSize=0.8, kFold=5, scaleSVM=True, c_svm=1, SVM_gamma='scale', KNN_neighbors=4, KNN_weighting='uniform',\
+                           analyzeInterval=3, metricInterval=7, changeThreshold=0.02, trainSize=0.8, kFold=5, scaleSVM=True, c_svm=1, SVM_gamma='scale', KNN_neighbors=4, KNN_weighting='distance',\
                                RF_n_estimators=100)
 
 @app.route('/dependency_results', methods=['GET', 'POST'])
