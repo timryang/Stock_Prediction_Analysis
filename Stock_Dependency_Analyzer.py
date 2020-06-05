@@ -10,6 +10,7 @@ from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import GridSearchCV
 
 #%% Stock dependency class
 
@@ -137,10 +138,7 @@ class Stock_Dependency_Analyzer():
         
         return p, ps
         
-    def create_all_classifiers(self, scaleSVM=True, c_svm=1,\
-                               SVM_kernel='rbf', SVM_degree=3, coeff_svm=0, SVM_gamma='scale',\
-                               KNN_neighbors=4, KNN_weights='uniform',\
-                                   RF_n_estimators=100, RF_criterion='gini',
+    def create_all_classifiers(self, scaleSVM=True, SVM_grid=None, KNN_grid=None, RF_grid=None, \
                                    trainSize=0.8, k=5, doHTML=False):
         
         # Train test split
@@ -154,31 +152,37 @@ class Stock_Dependency_Analyzer():
         else:
             xTrain_svm = xTrain
             xTest_svm = xTest
-        svm_clf = svm.SVC(C=c_svm, kernel=SVM_kernel, degree=SVM_degree, coef0=coeff_svm, gamma=SVM_gamma)
-        scores_svm, self.svm_clf_ = do_cross_validate(svm_clf, xTrain_svm, yTrain, k=k)
-        print("SVM Results:")
+        svm_clf = svm.SVC()
+        svm_clf = GridSearchCV(svm_clf, SVM_grid, cv=k)
+        svm_clf.fit(xTrain_svm, yTrain)
+        self.svm_clf_, svm_params, scores_svm = extract_from_gridCV(svm_clf, k)
+        if not doHTML:
+            print("SVM Results:")
         report_svm, p_svm = classifier_statistics(xTest_svm, yTest, self.svm_clf_, doHTML=doHTML)
-        print("\n")
         
         # KNN
-        knn_clf = KNeighborsClassifier(n_neighbors=KNN_neighbors, weights=KNN_weights)
-        scores_knn, self.knn_clf_ = do_cross_validate(knn_clf, xTrain, yTrain, k=k)
-        print("KNN Results:")
+        knn_clf = KNeighborsClassifier()
+        knn_clf = GridSearchCV(knn_clf, KNN_grid, cv=k)
+        knn_clf.fit(xTrain, yTrain)
+        self.knn_clf_, knn_params, scores_knn = extract_from_gridCV(knn_clf, k)
+        if not doHTML:
+            print("KNN Results:")
         report_knn, p_knn = classifier_statistics(xTest, yTest, self.knn_clf_, doHTML=doHTML)
-        print("\n")
         
         # RF
-        rf_clf = RandomForestClassifier(n_estimators=RF_n_estimators, criterion=RF_criterion)
-        scores_rf, self.rf_clf_ = do_cross_validate(rf_clf, xTrain, yTrain, k=k)
-        print("Random Forest Results:")
+        rf_clf = RandomForestClassifier()
+        rf_clf = GridSearchCV(rf_clf, RF_grid, cv=k)
+        rf_clf.fit(xTrain, yTrain)
+        self.rf_clf_, rf_params, scores_rf = extract_from_gridCV(rf_clf, k)
+        if not doHTML:
+            print("Random Forest Results:")
         report_rf, p_rf = classifier_statistics(xTest, yTest, self.rf_clf_, doHTML=doHTML)
-        print("\n")
         
         cv_scores = [scores_svm, scores_knn, scores_rf]
         report_list = [report_svm, report_knn, report_rf]
         p_list = [p_svm, p_knn, p_rf]
         
-        return cv_scores, report_list, p_list
+        return cv_scores, report_list, p_list, svm_params, knn_params, rf_params
         
     def run_prediction(self, scaleSVM):
         if scaleSVM:
@@ -198,3 +202,47 @@ class Stock_Dependency_Analyzer():
         print(reportDF)
         
         return reportDF
+    
+#%% Grid Search Function
+
+def Stock_Dependency_Grid_Search(analyzeTicker, metricTickers, years, trainSize, kFold, analyzeInterval, metricInterval, changeFilter,\
+                                 scaleSVM, SVM_grid, KNN_grid, RF_grid, doHTML):
+    
+    dependency_analyzer = Stock_Dependency_Analyzer()
+    dependency_analyzer.collect_data(analyzeTicker, metricTickers, years)
+    
+    best_score = 0
+    
+    for i_aInt in analyzeInterval:
+        for i_mInt in metricInterval:
+            for i_change in changeFilter:
+                p, ps = dependency_analyzer.build_correlation(i_aInt, i_mInt, changeFilter=i_change, doHTML=doHTML)
+                for i_train in trainSize:
+                    for i_k in kFold:
+                        scores, report, conf_mat, svm_params, knn_params, rf_params = \
+                            dependency_analyzer.create_all_classifiers(scaleSVM=scaleSVM, SVM_grid=SVM_grid, KNN_grid=KNN_grid, RF_grid=RF_grid,\
+                                                                       trainSize=i_train, k=i_k, doHTML=doHTML)
+                        results = dependency_analyzer.run_prediction(scaleSVM)
+                        
+                        mean_scores = [sum([float(val) for val in series.split('; ')])/len(series.split('; ')) for series in scores]
+                        max_score = max(mean_scores)
+                        
+                        if (max_score > best_score):
+                            best_score = max_score
+                            best_p = p
+                            best_ps = ps
+                            best_scores = scores
+                            best_report = report
+                            best_conf_mat = conf_mat
+                            best_svm_params = svm_params
+                            best_knn_params = knn_params
+                            best_rf_params = rf_params
+                            best_result = results
+                            best_aInt = i_aInt
+                            best_mInt = i_mInt
+                            best_change = i_change
+                            best_train = i_train
+                            best_k = i_k
+                            
+    return best_p, best_ps, best_scores, best_report, best_conf_mat, best_svm_params, best_knn_params, best_rf_params, best_result,\
+        best_aInt, best_mInt, best_change, best_train, best_k

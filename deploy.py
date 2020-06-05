@@ -9,10 +9,11 @@ Created on Sat May 23 19:20:16 2020
 from flask import Flask, render_template, request
 from bokeh.embed import components
 from Stock_NB_Analyzer import Stock_NB_Analyzer
-from Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
+from Stock_Dependency_Analyzer import Stock_Dependency_Grid_Search
 from nltk.corpus import stopwords
 from sqlalchemy import create_engine
 import pandas as pd
+import numpy as np
 
 #%%
 
@@ -164,9 +165,10 @@ def nb_results():
         
 @app.route('/define_dependency', methods=['GET', 'POST'])
 def define_dependency_parameters():
-    return render_template('dependency_results.html', analyzeTicker='DAL', metricTickers='NDAQ,XOM', years=3, recollectData=True,\
-                           analyzeInterval=3, metricInterval=7, changeThreshold=0.02, trainSize=0.8, kFold=5, scaleSVM=True, c_svm=1, SVM_gamma='scale', KNN_neighbors=4, KNN_weighting='distance',\
-                               RF_n_estimators=100)
+    return render_template('dependency_results.html', analyzeTicker='DAL', metricTickers='NDAQ,XOM', years=3,\
+                           analyzeInterval=3, metricInterval=7, changeThreshold=0.02, trainSize=0.8, kFold=5, \
+                               scaleSVM=True, c_svm=1, SVM_kernel='rbf', SVM_gamma='scale', \
+                                   KNN_neighbors=10, KNN_weighting='distance', RF_n_estimators=100, RF_criterion='entropy')
 
 @app.route('/dependency_results', methods=['GET', 'POST'])
 def dependency_results():
@@ -175,70 +177,115 @@ def dependency_results():
     metricTickers = request.form['metricTickers']
     metricTickers_tokenized = metricTickers.split(',')
     years = float(request.form['years'])
-    recollectData = bool(int(request.form['recollectData']))
-    analyzeInterval = int(request.form['analyzeInterval'])
-    metricInterval = int(request.form['metricInterval'])
+    
+    analyzeInterval = request.form['analyzeInterval']
+    if ':' in analyzeInterval:
+        range_vals = [int(val) for val in analyzeInterval.split(':')]
+        analyzeInterval = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
+    else:
+        analyzeInterval = [int(val) for val in analyzeInterval.split(',')]
+    metricInterval = request.form['metricInterval']
+    if ':' in metricInterval:
+        range_vals = [int(val) for val in metricInterval.split(':')]
+        metricInterval = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
+    else:
+        metricInterval = [int(val) for val in metricInterval.split(',')]
     changeThreshold = request.form['changeThreshold']
     if changeThreshold == '':
-        changeThreshold = 0
+        changeThreshold = [0]
+    elif ':' in changeThreshold:
+        range_vals = [float(val) for val in changeThreshold.split(':')]
+        changeThreshold = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
     else:
-        changeThreshold = float(changeThreshold)
-    trainSize = float(request.form['trainSize'])
-    kFold = int(request.form['kFold'])
+        changeThreshold = [float(val) for val in changeThreshold.split(',')]
+    trainSize = request.form['trainSize']
+    if ':' in trainSize:
+        range_vals = [float(val) for val in trainSize.split(':')]
+        trainSize = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
+    else:
+        trainSize = [float(val) for val in trainSize.split(',')]
+    kFold = request.form['kFold']
+    if ':' in kFold:
+        range_vals = [int(val) for val in kFold.split(':')]
+        kFold = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
+    else:
+        kFold = [int(val) for val in kFold.split(',')]
+    
     scaleSVM = bool(int(request.form['scaleSVM']))
-    c_svm = float(request.form['c_svm'])
-    SVM_kernel = request.form['SVM_kernel']
+    c_svm = request.form['c_svm']
+    if ':' in c_svm:
+        range_vals = [float(val) for val in c_svm.split(':')]
+        c_svm = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
+    else:
+        c_svm = [float(val) for val in c_svm.split(',')]
+    SVM_kernel = (request.form['SVM_kernel']).split(',')
     SVM_degree = request.form['SVM_degree']
     if SVM_degree == '':
-        SVM_degree = 3
+        SVM_degree = [3]
+    elif ':' in SVM_degree:
+        range_vals = [int(val) for val in SVM_degree.split(':')]
+        SVM_degree = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
     else:
-        SVM_degree = int(SVM_degree)
+        SVM_degree = [int(val) for val in SVM_degree.split(',')]
     coeff_svm = request.form['coeff_svm']
     if coeff_svm == '':
-        coeff_svm = 0
+        coeff_svm = [0]
+    elif ':' in coeff_svm:
+        range_vals = [float(val) for val in coeff_svm.split(':')]
+        coeff_svm = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
     else:
-        coeff_svm = float(coeff_svm)
-    SVM_gamma = request.form['SVM_gamma']
-    try:
-        SVM_gamma = float(SVM_gamma)
-    except:
-        SVM_gamma = SVM_gamma
-    KNN_neighbors = int(request.form['KNN_neighbors'])
-    KNN_weighting = request.form['KNN_weighting']
-    RF_n_estimators = int(request.form['RF_n_estimators'])
-    RF_criterion = request.form['RF_criterion']
+        coeff_svm = [float(val) for val in coeff_svm.split(',')]
+    SVM_gamma = (request.form['SVM_gamma']).split(',')
+    SVM_gamma_temp = []
+    for i_gamma in SVM_gamma:
+        try:
+            SVM_gamma_temp.append(float(i_gamma))
+        except:
+            SVM_gamma_temp.append(i_gamma)
+    SVM_gamma = SVM_gamma_temp
     
-    dependency_analyzer = Stock_Dependency_Analyzer()
-    if recollectData:
-        dependency_analyzer.collect_data(analyzeTicker, metricTickers_tokenized, years)
-        analyzerData = dependency_analyzer.analyzerStockData_
-        metricData = dependency_analyzer.metricStockData_
-        sqlite_connection = engine.connect()
-        analyzerData.to_sql(name='AnalyzerData', con=sqlite_connection, if_exists='replace')
-        for idx, df in enumerate(metricData):
-            df.to_sql(name='MetricData'+str(idx), con=sqlite_connection, if_exists='replace')
-        sqlite_connection.close()
+    KNN_neighbors = request.form['KNN_neighbors']
+    if ':' in KNN_neighbors:
+        range_vals = [int(val) for val in KNN_neighbors.split(':')]
+        KNN_neighbors = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
     else:
-        sqlite_connection = engine.connect()
-        analyzerData = pd.read_sql('select * from AnalyzerData', sqlite_connection)
-        metricData = [pd.read_sql('select * from MetricData' + str(idx), sqlite_connection) \
-                      for idx in range(len(metricTickers_tokenized))]
-        sqlite_connection.close()
-        dependency_analyzer.load_data(analyzerData, metricData, analyzeTicker, metricTickers_tokenized)
-    # dependency_analyzer.collect_data(analyzeTicker, metricTickers_tokenized, years)
-    p, ps = dependency_analyzer.build_correlation(analyzeInterval, metricInterval, changeFilter=changeThreshold, doHTML=True)
+        KNN_neighbors = [int(val) for val in KNN_neighbors.split(',')]
+    KNN_weighting = (request.form['KNN_weighting']).split(',')
+    
+    RF_n_estimators = request.form['RF_n_estimators']
+    if ':' in RF_n_estimators:
+        range_vals = [int(val) for val in RF_n_estimators.split(':')]
+        RF_n_estimators = list(np.arange(range_vals[0], range_vals[2], range_vals[1]))
+    else:
+        RF_n_estimators = [int(val) for val in RF_n_estimators.split(',')]
+    RF_criterion = (request.form['RF_criterion']).split(',')
+    
+    SVM_grid = {'C': c_svm, 'kernel': SVM_kernel, 'degree': SVM_degree, 'gamma': SVM_gamma, 'coef0': coeff_svm}
+    KNN_grid = {'n_neighbors': KNN_neighbors, 'weights': KNN_weighting}
+    RF_grid = {'n_estimators': RF_n_estimators, 'criterion': RF_criterion}
+    
+    p, ps, scores_list, report_list, conf_mat_list, svm_params, knn_params, rf_params, predictionDF,\
+        analyzeInterval, metricInterval, changeThreshold, trainSize, kFold = Stock_Dependency_Grid_Search(analyzeTicker, metricTickers_tokenized, years, trainSize, kFold, analyzeInterval, metricInterval, changeThreshold,\
+                                 scaleSVM, SVM_grid, KNN_grid, RF_grid, doHTML=True)
+
     script_p, div_p = components(p)
-    scores_list, report_list, conf_mat_list = dependency_analyzer.create_all_classifiers(scaleSVM=scaleSVM, c_svm=c_svm, SVM_kernel=SVM_kernel, \
-                                                                            SVM_degree=SVM_degree, coeff_svm=coeff_svm, SVM_gamma=SVM_gamma, \
-                                                                               KNN_neighbors=KNN_neighbors, KNN_weights=KNN_weighting, \
-                                                                                   RF_n_estimators=RF_n_estimators, RF_criterion=RF_criterion, \
-                                                                                   trainSize=trainSize, k=kFold, doHTML=True)
     report_list = [report.to_html(index=False) for report in report_list]
     conf_mat_list = [conf_mat.to_html(index=False, bold_rows=True) for conf_mat in conf_mat_list]
-    predictionDF = dependency_analyzer.run_prediction(scaleSVM)
     predictionDF = predictionDF.to_html(index=False)
     
-    return render_template('dependency_results.html', analyzeTicker=analyzeTicker, metricTickers=metricTickers, years=years, recollectData=recollectData,\
+    c_svm = svm_params['C']
+    SVM_kernel = svm_params['kernel']
+    SVM_degree = svm_params['degree']
+    coeff_svm = svm_params['coef0']
+    SVM_gamma = svm_params['gamma']
+    
+    KNN_neighbors = knn_params['n_neighbors']
+    KNN_weighting = knn_params['weights']
+    
+    RF_n_estimators = rf_params['n_estimators']
+    RF_criterion = rf_params['criterion']
+    
+    return render_template('dependency_results.html', analyzeTicker=analyzeTicker, metricTickers=metricTickers, years=years,\
                            analyzeInterval=analyzeInterval, metricInterval=metricInterval, changeThreshold=changeThreshold,\
                                trainSize=trainSize, kFold=kFold, scaleSVM=scaleSVM, c_svm=c_svm, SVM_kernel=SVM_kernel, SVM_degree=SVM_degree, coeff_svm=coeff_svm, SVM_gamma=SVM_gamma,\
                                    KNN_neighbors=KNN_neighbors, KNN_weighting=KNN_weighting, RF_n_estimators=RF_n_estimators,\

@@ -299,9 +299,9 @@ def classifier_statistics(x_test, y_truth, clf, doHTML=False):
         reportDF['F1'] = pd.Series(f1_list)
         reportDF['Support'] = pd.Series(support_list)
         report = reportDF
-                    
-    print("\nModel Results: ")
-    print(report)
+    if not doHTML:                
+        print("\nModel Results: ")
+        print(report)
     p = show_confusion_matrix(y_truth, y_predict, labels=class_names, isBokeh=doHTML)
     return report, p
 
@@ -333,9 +333,6 @@ def NB_show_most_informative(clf, count_vect, n_features=10, doHTML=False):
         ratio = np.round(np.divide(probs[idx], complement_sum_probs), 3)
         top_features = (sorted(zip(features, ratio), key = itemgetter(1)))[:-(n_features+1):-1]
         top_features_list.append(top_features)
-    print("\nBelow printout gives the most informative words.")
-    print("Example -> pos: ('gain', 3) indicates 'gain' is 3x more likely"\
-          + " to predict pos compared to the sum prob of other classes.\n")
     if doHTML:
         report = pd.DataFrame()
         for idx_c, i_class in enumerate(classes):
@@ -349,6 +346,9 @@ def NB_show_most_informative(clf, count_vect, n_features=10, doHTML=False):
             for idx_c in range(num_classes):
                 report = report + "{:<35s}".format(str(top_features_list[idx_c][idx_f]))
             report = report + "\n"
+        print("\nBelow printout gives the most informative words.")
+        print("Example -> pos: ('gain', 3) indicates 'gain' is 3x more likely"\
+              + " to predict pos compared to the sum prob of other classes.\n")
         print(report)
     return report
 
@@ -369,3 +369,15 @@ def do_cross_validate(clf, x_vectors, y_vector, metric='accuracy', k=5):
     clf_out = cv_results['estimator'][np.argmax(test_scores)]
     
     return test_scores_str, clf_out
+
+def extract_from_gridCV(clf, k):
+    best_clf = clf.best_estimator_
+    best_params = clf.best_params_
+    results = pd.DataFrame.from_dict(clf.cv_results_)
+    best_idx = clf.best_index_
+    scores = [round(results['split'+str(i_k)+'_test_score'][best_idx],2) for i_k in range(k)]
+    scores_str = str(scores[0])
+    for score in scores[2:]:
+        scores_str = scores_str + '; ' + str(score)
+        
+    return best_clf, best_params, scores_str
