@@ -27,9 +27,9 @@
                     <label>Metric Interval<span style="color: #ff0000">*</span>:</label><input type='number' name='metricInterval' value={{ metricInterval }}> In days<br>
                     <label>% Threshold:</label><input type='number' step=0.01 name='changeThreshold' value={{ changeThreshold }}> Filter out < threshold<br>
         			<label>Train Size<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='trainSize' value={{ trainSize }}> % data for training<br>
+                    <label>K Fold<span style="color: #ff0000">*</span>:</label><input type='number' name='kFold' value={{ kFold }}><br>
 
                     <h3>Classifier Parameters:</h3>
-                    <label>LR C<span style="color: #ff0000">*</span>:</label><input type='number' step=0.001 name='c_lr' value={{ c_lr }}> Inverse regulation<br>
                     <label>Standardize SVM:</label><select name='scaleSVM'>
                     {% if scaleSVM == True %}
                         <option value=1>True</option>
@@ -98,29 +98,32 @@
         </div>
 
         <div class="dependency_tables">
-            <div class="dependency_single_table small_table">
-                <h3>Logistic Regression:</h3>
-                {{ report_lr|safe }}
-                <br>
-                {{ conf_mat_lr|safe }}
-            </div>
-            <div class="dependency_single_table small_table">
-                <h3>SVM:</h3>
+            <div class="dependency_single_table">
+                <h4>SVM:</h4>
                 {{ report_svm|safe }}
                 <br>
                 {{ conf_mat_svm|safe }}
+                <br>
+                CV Accuracy:
+                {{ scores_svm }}
             </div>
-            <div class="dependency_single_table small_table">
-                <h3>KNN:</h3>
+            <div class="dependency_single_table">
+                <h4>KNN:</h4>
                 {{ report_knn|safe }}
                 <br>
                 {{ conf_mat_knn|safe }}
+                <br>
+                CV Accuracy:
+                {{ scores_knn }}
             </div>
-            <div class="dependency_single_table small_table">
-                <h3>Random Forest:</h3>
+            <div class="dependency_single_table">
+                <h4>Random Forest:</h4>
                 {{ report_rf|safe }}
                 <br>
                 {{ conf_mat_rf|safe }}
+                <br>
+                CV Accuracy:
+                {{ scores_rf }}
             </div>
         </div>
 

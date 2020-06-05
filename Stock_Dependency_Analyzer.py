@@ -6,7 +6,6 @@ Created on Sat May 30 17:32:15 2020
 """
 
 from CommonFunctions.commonFunctions import *
-from sklearn.linear_model import LogisticRegression
 from sklearn import svm
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.ensemble import RandomForestClassifier
@@ -25,7 +24,6 @@ class Stock_Dependency_Analyzer():
         self.metric_filt_ = np.array([])
         self.predictors_ = np.array([])
         self.scaleTF_ = StandardScaler()
-        self.lr_clf_ = LogisticRegression()
         self.svm_clf_ = svm.SVC()
         self.knn_clf_ = KNeighborsClassifier()
         self.rf_clf_ = RandomForestClassifier()
@@ -62,6 +60,7 @@ class Stock_Dependency_Analyzer():
         metricCloseDiff = np.array([metricCloseData[i+metricInterval]-metricCloseData[i] \
                                     for i in range(metricCloseData.shape[0]-metricInterval)])
         metricPercDiff = metricCloseDiff / metricCloseData[:-metricInterval]
+        self.scaleTF_ = StandardScaler().fit(metricPercDiff)
         
         # Compute analyze percent change
         analyzeDates = dates[metricInterval:-analyzeInterval]
@@ -122,7 +121,7 @@ class Stock_Dependency_Analyzer():
         p_delta = plot_values(x_values_diff, y_values_diff, labels, x_label, y_label_diff, title_diff, isDates=True, isBokeh=doHTML)
         
         if doHTML:
-            p = bokeh.layouts.row(p, p_delta, sizing_mode='scale_width')
+            p = bokeh.layouts.row(p, p_delta, sizing_mode='stretch_both')
 
         # Plot scatter
         if len(self.metricTickers_) <= 3:
@@ -138,54 +137,50 @@ class Stock_Dependency_Analyzer():
         
         return p, ps
         
-    def create_all_classifiers(self, c_lr, scaleSVM, c_svm,\
-                               SVM_kernel, SVM_degree, coeff_svm, SVM_gamma,\
-                               KNN_neighbors, KNN_weights,\
-                                   RF_n_estimators, RF_criterion,
-                                   trainSize=0.8, doHTML=False):
+    def create_all_classifiers(self, scaleSVM=True, c_svm=1,\
+                               SVM_kernel='rbf', SVM_degree=3, coeff_svm=0, SVM_gamma='scale',\
+                               KNN_neighbors=4, KNN_weights='uniform',\
+                                   RF_n_estimators=100, RF_criterion='gini',
+                                   trainSize=0.8, k=5, doHTML=False):
         
         # Train test split
         xTrain, xTest, yTrain, yTest = train_test_split(self.metric_filt_, self.stockResults_,\
-                                                train_size=trainSize, random_state=42)
-            
-        # Logistic regression
-        self.lr_clf_ = LogisticRegression(C=c_lr).fit(xTrain, yTrain)
-        print("Logistic Regression Results:")
-        report_lr, p_lr = classifier_statistics(xTest, yTest, self.lr_clf_, doHTML=doHTML)
-        print("\n")
+                                                train_size=trainSize, random_state=0)    
         
         # SVM
         if scaleSVM:
-            self.scaleTF_ = StandardScaler().fit(xTest)
+            xTrain_svm = self.scaleTF_.transform(xTrain)
             xTest_svm = self.scaleTF_.transform(xTest)
         else:
+            xTrain_svm = xTrain
             xTest_svm = xTest
-        self.svm_clf_ = svm.SVC(C=c_svm, kernel=SVM_kernel, degree=SVM_degree, coef0=coeff_svm, gamma=SVM_gamma).fit(xTrain, yTrain)
+        svm_clf = svm.SVC(C=c_svm, kernel=SVM_kernel, degree=SVM_degree, coef0=coeff_svm, gamma=SVM_gamma)
+        scores_svm, self.svm_clf_ = do_cross_validate(svm_clf, xTrain_svm, yTrain, k=k)
         print("SVM Results:")
         report_svm, p_svm = classifier_statistics(xTest_svm, yTest, self.svm_clf_, doHTML=doHTML)
         print("\n")
         
         # KNN
-        self.knn_clf_ = KNeighborsClassifier(n_neighbors=KNN_neighbors, weights=KNN_weights)
-        self.knn_clf_.fit(xTrain, yTrain)
+        knn_clf = KNeighborsClassifier(n_neighbors=KNN_neighbors, weights=KNN_weights)
+        scores_knn, self.knn_clf_ = do_cross_validate(knn_clf, xTrain, yTrain, k=k)
         print("KNN Results:")
         report_knn, p_knn = classifier_statistics(xTest, yTest, self.knn_clf_, doHTML=doHTML)
         print("\n")
         
         # RF
-        self.rf_clf_ = RandomForestClassifier(n_estimators=RF_n_estimators, criterion=RF_criterion)
-        self.rf_clf_.fit(xTrain, yTrain)
+        rf_clf = RandomForestClassifier(n_estimators=RF_n_estimators, criterion=RF_criterion)
+        scores_rf, self.rf_clf_ = do_cross_validate(rf_clf, xTrain, yTrain, k=k)
         print("Random Forest Results:")
         report_rf, p_rf = classifier_statistics(xTest, yTest, self.rf_clf_, doHTML=doHTML)
         print("\n")
         
-        report_list = [report_lr, report_svm, report_knn, report_rf]
-        p_list = [p_lr, p_svm, p_knn, p_rf]
+        cv_scores = [scores_svm, scores_knn, scores_rf]
+        report_list = [report_svm, report_knn, report_rf]
+        p_list = [p_svm, p_knn, p_rf]
         
-        return report_list, p_list
+        return cv_scores, report_list, p_list
         
     def run_prediction(self, scaleSVM):
-        lr_predict = self.lr_clf_.predict(self.predictors_)
         if scaleSVM:
             predictors_svm = self.scaleTF_.transform(self.predictors_)
         else:
@@ -195,8 +190,7 @@ class Stock_Dependency_Analyzer():
         rf_predict = self.rf_clf_.predict(self.predictors_)
         
         reportDF = pd.DataFrame()
-        reportDF['Days From Today'] = pd.Series(list(range(1,len(lr_predict)+1)))
-        reportDF['Log Reg'] = pd.Series(lr_predict)
+        reportDF['Days From Today'] = pd.Series(list(range(1,len(svm_predict)+1)))
         reportDF['SVM'] = pd.Series(svm_predict)
         reportDF['KNN'] = pd.Series(knn_predict)
         reportDF['Rand Forest'] = pd.Series(rf_predict)

@@ -145,7 +145,7 @@ class Stock_NB_Analyzer:
         p_delta = plot_values(x_values_plt2, y_values_plt2, labels_plt2, xlabel_plt2, ylabel_plt2, title_plt2, isDates=True, isBokeh=isBokeh)
         
         if isBokeh:
-            p = bokeh.layouts.row(p, p_delta, sizing_mode='scale_width')
+            p = bokeh.layouts.row(p, p_delta, sizing_mode='stretch_both')
         else:
             p = "used matplotlib"
         

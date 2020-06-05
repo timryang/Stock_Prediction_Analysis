@@ -29,6 +29,8 @@ from CommonFunctions.TweetCriteria_TRY import TweetCriteria as TC_TRY
 from mpl_toolkits.mplot3d import Axes3D
 import io
 import base64
+from sklearn.model_selection import cross_validate
+from scipy.sparse import csr_matrix
 
 warnings.filterwarnings("ignore")
 
@@ -169,30 +171,6 @@ def plot_hist(values, x_label, y_label, title, isBokeh):
         plt.ylabel(y_label)
         plt.show()
         return "used matplotlib"
-    
-def plot_single_scatter(axes_values, color_values, axes_labels, title, saveFig=False):
-    # Input axes_values as an array
-    fig = plt.figure()
-    cm = plt.cm.get_cmap('RdYlBu')
-    if axes_values.ndim == 1:
-        ax = fig.add_subplot(111)
-        p = ax.scatter(axes_values, color_values)
-    elif axes_values.shape[1] == 2:
-        ax = fig.add_subplot(111)
-        p = ax.scatter(axes_values[:,0], axes_values[:,1], c=color_values, cmap=cm)
-        fig.colorbar(p)
-    elif axes_values.shape[1] == 3:
-        ax = fig.add_subplot(111, projection='3d')
-        p = ax.scatter(axes_values[:,0], axes_values[:,1], axes_values[:,2], c=color_values, cmap=cm)
-        fig.colorbar(p)
-        ax.set_zlabel(axes_labels[2])
-    ax.set_xlabel(axes_labels[0])
-    ax.set_ylabel(axes_labels[1])
-    ax.set_title(title)
-    plt.grid(b=True)
-    if saveFig:
-        plt.savefig('images\single_scatter.png')
-    plt.show()
         
 def plot_multi_scatter(axes_values_list, labels, axes_labels, title, color_values_list=None, saveFig=False):
     # Input axes_values as a list of arrays with n dimensions
@@ -374,3 +352,21 @@ def NB_show_most_informative(clf, count_vect, n_features=10, doHTML=False):
             report = report + "\n"
         print(report)
     return report
+
+def do_cross_validate(clf, x_vectors, y_vector, metric='accuracy', k=5):
+    total = np.hstack((x_vectors, y_vector.reshape(-1,1)))
+    np.random.seed(seed=0)
+    np.random.shuffle(total)
+    
+    x_vectors_shuff = total[:,:-1]
+    y_vector_shuff = total[:,-1:]
+    
+    cv_results = cross_validate(clf, x_vectors_shuff, y_vector_shuff, scoring=metric, cv=k, return_estimator=True)
+    
+    test_scores = np.round(cv_results['test_score'], 2)
+    test_scores_str = str(test_scores[0])
+    for score in test_scores[2:]:
+        test_scores_str = test_scores_str + '; ' + str(score)
+    clf_out = cv_results['estimator'][np.argmax(test_scores)]
+    
+    return test_scores_str, clf_out

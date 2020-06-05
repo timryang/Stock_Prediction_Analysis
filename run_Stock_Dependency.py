@@ -12,24 +12,28 @@ from Stock_Dependency_Analyzer import Stock_Dependency_Analyzer
 doHTML = False
 
 # Stock data
-analyzeTicker = 'TSLA'
-metricTickers = ['GOLD','XOM']
-years = 1
+analyzeTicker = 'DAL'
+metricTickers = ['NDAQ','XOM']
+years = 3
 
 # Correlator data
 trainSize = 0.8
+kFold = 5
 analyzeInterval = 3
 metricInterval = 7
 changeFilter = 0.02
 
 # SVM parameters:
-SVM_kernel = 'sigmoid' # {‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’}
+scaleSVM = True
+SVM_c = 1
+SVM_kernel = 'rbf' # {‘linear’, ‘poly’, ‘rbf’, ‘sigmoid’}
 SVM_degree = 3
-SVM_gamma = 'scale' # {'scale', 'auto'}
+SVM_coeff = 0 # using with poly / sigmoid
+SVM_gamma = 'scale' # {'scale', 'auto', float}
 
 # KNN parameters:
-KNN_neighbors = 4
-KNN_weights = 'uniform' # {‘uniform’, ‘distance’}
+KNN_neighbors = 10
+KNN_weights = 'distance' # {‘uniform’, ‘distance’}
 
 # RF parameters:
 RF_n_estimators = 100
@@ -40,8 +44,9 @@ RF_criterion = 'entropy' # {'gini', 'entropy'}
 dependency_analyzer = Stock_Dependency_Analyzer()
 dependency_analyzer.collect_data(analyzeTicker, metricTickers, years)
 dependency_analyzer.build_correlation(analyzeInterval, metricInterval, changeFilter=changeFilter, doHTML=doHTML)
-report, p = dependency_analyzer.create_all_classifiers(SVM_kernel, SVM_degree, SVM_gamma, \
-                                           KNN_neighbors, KNN_weights, \
-                                               RF_n_estimators, RF_criterion, \
-                                               trainSize=trainSize, doHTML=doHTML)
-dependency_analyzer.run_prediction()
+scores, report, p = dependency_analyzer.create_all_classifiers(scaleSVM=scaleSVM, c_svm=SVM_c, SVM_kernel=SVM_kernel,\
+                                                       SVM_degree=SVM_degree, coeff_svm=SVM_coeff, SVM_gamma=SVM_gamma, \
+                                                           KNN_neighbors=KNN_neighbors, KNN_weights=KNN_weights, \
+                                                               RF_n_estimators=RF_n_estimators, RF_criterion=RF_criterion, \
+                                                               trainSize=trainSize, k=kFold, doHTML=doHTML)
+dependency_analyzer.run_prediction(scaleSVM)
