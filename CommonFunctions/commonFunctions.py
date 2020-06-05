@@ -50,6 +50,23 @@ def del_idx(input_list, idxs):
         del input_list[idx]
     return input_list
 
+def parse_input(txt_input, blank_fill, expect_output='float'):
+    if txt_input == '' or txt_input == None:
+        output = [blank_fill]
+    elif ':' in txt_input:
+        if expect_output == 'float':
+            range_vals = [float(val) for val in txt_input.split(':')]
+        elif expect_output == 'int':
+            range_vals = [int(val) for val in txt_input.split(':')]
+        output = list(np.arange(range_vals[0], range_vals[2]+range_vals[1], range_vals[1]))
+    else:
+        if expect_output == 'float':
+            output = [float(val) for val in txt_input.split(',')]
+        elif expect_output == 'int':
+            output = [int(val) for val in txt_input.split(',')]
+    return output
+    
+
 #%% Twitter functions
 
 def get_tweets(txtSearch, userName=None, startDate=None, stopDate=None, geoLocation=None,\

@@ -6,7 +6,7 @@ Created on Sat May 30 18:15:36 2020
 """
 
 
-from Stock_Dependency_Analyzer import Stock_Dependency_Grid_Search
+from Stock_Dependency_Analyzer import *
 
 #%% Inputs
 doHTML = True
@@ -45,6 +45,8 @@ SVM_grid = {'C': SVM_c, 'kernel': SVM_kernel, 'degree': SVM_degree, 'gamma': SVM
 KNN_grid = {'n_neighbors': KNN_neighbors, 'weights': KNN_weights}
 RF_grid = {'n_estimators': RF_n_estimators, 'criterion': RF_criterion}
 
+dependency_analyzer = Stock_Dependency_Analyzer()
+dependency_analyzer.collect_data(analyzeTicker, metricTickers, years)
 best_p, best_ps, best_scores, best_report, best_conf_mat, best_svm_params, best_knn_params, best_rf_params, best_result,\
-        best_aInt, best_mInt, best_change, best_train, best_k = Stock_Dependency_Grid_Search(analyzeTicker, metricTickers, years, trainSize, kFold, analyzeInterval, metricInterval, changeFilter,\
+        best_aInt, best_mInt, best_change, best_train, best_k = Stock_Dependency_Grid_Search(dependency_analyzer, trainSize, kFold, analyzeInterval, metricInterval, changeFilter,\
                                  scaleSVM, SVM_grid, KNN_grid, RF_grid, doHTML)

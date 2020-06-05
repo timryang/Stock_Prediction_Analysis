@@ -205,11 +205,8 @@ class Stock_Dependency_Analyzer():
     
 #%% Grid Search Function
 
-def Stock_Dependency_Grid_Search(analyzeTicker, metricTickers, years, trainSize, kFold, analyzeInterval, metricInterval, changeFilter,\
+def Stock_Dependency_Grid_Search(dependency_analyzer, trainSize, kFold, analyzeInterval, metricInterval, changeFilter,\
                                  scaleSVM, SVM_grid, KNN_grid, RF_grid, doHTML):
-    
-    dependency_analyzer = Stock_Dependency_Analyzer()
-    dependency_analyzer.collect_data(analyzeTicker, metricTickers, years)
     
     best_score = 0
     
@@ -224,8 +221,8 @@ def Stock_Dependency_Grid_Search(analyzeTicker, metricTickers, years, trainSize,
                                                                        trainSize=i_train, k=i_k, doHTML=doHTML)
                         results = dependency_analyzer.run_prediction(scaleSVM)
                         
-                        mean_scores = [sum([float(val) for val in series.split('; ')])/len(series.split('; ')) for series in scores]
-                        max_score = max(mean_scores)
+                        report_scores = [temp['F1'].iloc[np.where(temp['Class/Metric'].values=='accuracy')[0][0]] for temp in report]
+                        max_score = max(report_scores)
                         
                         if (max_score > best_score):
                             best_score = max_score
