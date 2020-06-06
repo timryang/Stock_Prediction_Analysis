@@ -9,7 +9,7 @@ Created on Sat May 30 18:15:36 2020
 from Stock_Dependency_Analyzer import *
 
 #%% Inputs
-doHTML = True
+doHTML = False
 
 # Stock data
 analyzeTicker = 'DAL'
@@ -19,9 +19,9 @@ years = 3
 # Correlator data
 trainSize = [0.8]
 kFold = [5]
-analyzeInterval = [1,2,3]
-metricInterval = [4,5,6,7]
-changeFilter = [0,0.01,0.02]
+analyzeInterval = [1]
+metricInterval = [4]
+changeFilter = [0]
 
 # SVM parameters:
 scaleSVM = True
@@ -32,7 +32,7 @@ SVM_gamma = ['scale'] # {'scale', 'auto', float}
 SVM_coeff = [0] # used with poly / sigmoid
 
 # KNN parameters:
-KNN_neighbors = [1, 4, 9]
+KNN_neighbors = [1]
 KNN_weights = ['distance', 'uniform'] # {‘uniform’, ‘distance’}
 
 # RF parameters:

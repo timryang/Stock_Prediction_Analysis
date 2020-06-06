@@ -4,10 +4,12 @@ Created on Fri May 22 15:50:28 2020
 
 @author: timot
 """
-from Stock_NB_Analyzer import Stock_NB_Analyzer
+from Stock_NB_Analyzer import *
 from nltk.corpus import stopwords
 
 #%% Inputs:
+    
+doHTML = True
 
 ticker = 'MRNA'
 years = 1
@@ -32,14 +34,14 @@ tweetDir = './CSV_Files/MRNA_Tweets.csv'
 dataDir = './CSV_Files/MRNA.csv'
 
 # Correlation parameters
-deltaInterval = 2 # days
-changeFilter = 0.02 # %
+deltaInterval = [1,2] # days
+changeFilter = [0,0.02] # %
 
 # Classifier parameters
-trainSize = 0.8
-stopwordsList = stopwords.words('english')
-useIDF = True
-do_downsample = True
+trainSize = [0.8]
+stopwordsList = [None, stopwords.words('english')]
+useIDF = [True]
+do_downsample = [True]
 do_stat = True
 numFeatures = 10
 
@@ -65,8 +67,9 @@ if loadData:
     NB_analyzer.load_data(dataDir)
 else:
     NB_analyzer.collect_data(ticker, years)
-NB_analyzer.correlate_tweets(deltaInterval, changeFilter)
-NB_analyzer.plot_data(deltaInterval)
-NB_analyzer.create_classifier(trainSize, stopwordsList, useIDF, do_downsample, do_stat, numFeatures)
+
+NB_analyzer, count_report, p, report, most_inform, conf_mat, deltaInterval, changeThreshold, trainSize, useIDF, do_downsample, stopwordsList = \
+        Stock_NB_Grid_Search(NB_analyzer, trainSize, deltaInterval, changeFilter, useIDF, do_downsample, stopwordsList, do_stat, numFeatures, doHTML)
+
 NB_analyzer.run_prediction(userName_predict, geoLocation_predict, distance_predict, txtSearch_predict,\
                            numMaxTweets_predict, topTweets_predict, lang_predict, printAll)

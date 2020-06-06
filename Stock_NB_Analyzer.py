@@ -150,3 +150,36 @@ class Stock_NB_Analyzer:
             p = "used matplotlib"
         
         return p
+    
+def Stock_NB_Grid_Search(NB_analyzer, trainSize, deltaInterval, changeFilter, useIDF, do_downsample, stopwordsList, do_stat=True, numFeatures=10, doHTML=True):
+        
+    best_score = 0
+    
+    for i_int in deltaInterval:
+        for i_change in changeFilter:
+            count_report = NB_analyzer.correlate_tweets(i_int, i_change)
+            p = NB_analyzer.plot_data(i_int, isBokeh=doHTML)
+            for i_train in trainSize:
+                for i_idf in useIDF:
+                    for i_ds in do_downsample:
+                        for i_sw in stopwordsList:
+                            report, most_inform, conf_mat = NB_analyzer.create_classifier(i_train, i_sw, i_idf, i_ds, do_stat=do_stat, numFeatures=numFeatures, doHTML=doHTML)
+                            
+                            report_score = report['F1'].iloc[np.where(report['Class/Metric'].values=='accuracy')[0][0]]
+                            
+                            if (report_score > best_score):
+                                best_score = report_score
+                                best_NB = NB_analyzer
+                                best_cr = count_report
+                                best_p = p
+                                best_report = report
+                                best_most_inform = most_inform
+                                best_conf_mat = conf_mat
+                                best_int = i_int
+                                best_change = i_change
+                                best_train = i_train
+                                best_idf = i_idf
+                                best_ds = i_ds
+                                best_sw = i_sw
+                        
+    return best_NB, best_cr, best_p, best_report, best_most_inform, best_conf_mat, best_int, best_change, best_train, best_idf, best_ds, best_sw

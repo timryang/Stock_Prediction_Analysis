@@ -6,7 +6,7 @@
     		<div class="lefside_dependency_form">
         		<form action="/dependency_results" method="POST">
 
-                    <p style="color:red">Leave non-required fields empty<br>*Required fields<br><br></p>
+                    <p style="color:red">*Required fields<br></p>
                     <p>Multiple entires are allowed for certain fields:<br> - Comma separated or start:inc:end</p>
 
         			<h3>Stock Data Parameters:</h3>
@@ -48,7 +48,17 @@
                     <label>KNN Neighbors<span style="color: #ff0000">*</span>:</label><input type='text' name='KNN_neighbors' value={{ KNN_neighbors }}><br>
                     <label>KNN Weighting<span style="color: #ff0000">*</span>:</label><input type='text' name='KNN_weighting' value={{ KNN_weighting }}> uniform/distance<br>
                     <label>RF Estimators<span style="color: #ff0000">*</span>:</label><input type='text' name='RF_n_estimators' value={{ RF_n_estimators }}><br>
-                    <label>RF Criterion<span style="color: #ff0000">*</span>:</label><input type='text' name='RF_criterion' value={{ RF_criterion }}> gini/entropy<br>
+                    <label>RF Criterion:</label><select name='RF_criterion'>
+                    {% if RF_criterion == 'gini' %}
+                        <option value='gini'>gini</option>
+                        <option value='entropy'>entropy</option>
+                        <option value='both'>both</option>
+                    {% else %}
+                        <option value='entropy'>entropy</option>
+                        <option value='gini'>gini</option>
+                        <option value='both'>both</option>
+                    {% endif %}
+                    </select><br>
                     <br>
 
         			<input type='submit' value='Analyze/Predict'>

@@ -8,7 +8,7 @@ Created on Sat May 23 19:20:16 2020
 
 from flask import Flask, render_template, request
 from bokeh.embed import components
-from Stock_NB_Analyzer import Stock_NB_Analyzer
+from Stock_NB_Analyzer import *
 from Stock_Dependency_Analyzer import *
 from nltk.corpus import stopwords
 from sqlalchemy import create_engine
@@ -67,28 +67,34 @@ def nb_results():
     lang = request.form['lang']
     if (lang == 'None') or (lang == ''):
         lang = None
-    deltaInterval = int(request.form['deltaInterval'])
-    changeThreshold = request.form['changeThreshold']
-    if changeThreshold == '':
-        changeThreshold = 0
-    else:
-        changeThreshold = float(changeThreshold)
-    trainSize = float(request.form['trainSize'])
-    useIDF = bool(int(request.form['useIDF']))
-    do_downsample = bool(int(request.form['do_downsample']))
-    useStopwords = bool(int(request.form['useStopwords']))
-    if useStopwords:
-        stopwordsList = stopwords.words('english')
-    else:
-        stopwordsList = []
+    
+    deltaInterval = parse_input(request.form['deltaInterval'], None, expect_output='int')
+    changeThreshold = parse_input(request.form['changeThreshold'], 0, expect_output='float')
+    trainSize = parse_input(request.form['trainSize'], 0.8, expect_output='float')
+    try:
+        useIDF = [bool(int(request.form['useIDF']))]
+    except:
+        useIDF = [True, False]
+    try:
+        do_downsample = [bool(int(request.form['do_downsample']))]
+    except:
+        do_downsample = [True, False]
+    try:
+        useStopwords = [bool(int(request.form['useStopwords']))]
+    except:
+        useStopwords = [True, False]
     addStopwords = request.form['addStopwords']
     add_stopwords_tokenized = addStopwords.split(',')
-    if add_stopwords_tokenized:
-        for word in add_stopwords_tokenized:
-            stopwordsList.append(word)
-        stopwordsList = list(set(stopwordsList))
-    if not stopwordsList:
-        stopwordsList = None
+    stopwordsList = []
+    for use_sw in useStopwords:
+        if use_sw:
+            temp = stopwords.words('english')
+            if add_stopwords_tokenized:
+                for word in add_stopwords_tokenized:
+                    temp.append(word)
+            stopwordsList.append(list(set(temp)))
+        else:
+            stopwordsList.append(None)
         
     recollectData = bool(int(request.form['recollectData']))
     recollectTweets = bool(int(request.form['recollectTweets']))
@@ -117,11 +123,16 @@ def nb_results():
         sqlite_connection.close()
         NB_analyzer.load_data(dataDF)
     
-    count_report = NB_analyzer.correlate_tweets(deltaInterval, changeThreshold)
+    NB_analyzer, count_report, p, report, most_inform, conf_mat, deltaInterval, changeThreshold, trainSize, useIDF, do_downsample, stopwordsList = \
+        Stock_NB_Grid_Search(NB_analyzer, trainSize, deltaInterval, changeThreshold, useIDF, do_downsample, stopwordsList)
+        
+    if stopwordsList == None:
+        useStopwords = False
+    else:
+        useStopwords = True
+    
     count_report = count_report.replace('\n', '<br/>')
-    p = NB_analyzer.plot_data(deltaInterval, isBokeh=True)
     script_p, div_p = components(p)
-    report, most_inform, conf_mat = NB_analyzer.create_classifier(trainSize, stopwordsList, useIDF, do_downsample, do_stat=True, numFeatures=10, doHTML=True)
     report = report.to_html(index=False)
     most_inform = most_inform.to_html(index=False)
     conf_mat = conf_mat.to_html(index=False, bold_rows=True)
@@ -204,7 +215,9 @@ def dependency_results():
     KNN_weighting = (request.form['KNN_weighting']).split(',')
     
     RF_n_estimators = parse_input(request.form['RF_n_estimators'], 100, expect_output='int')
-    RF_criterion = (request.form['RF_criterion']).split(',')
+    RF_criterion = [request.form['RF_criterion']]
+    if RF_criterion[0] == 'both':
+        RF_criterion = ['gini','entropy']
     
     SVM_grid = {'C': c_svm, 'kernel': SVM_kernel, 'degree': SVM_degree, 'gamma': SVM_gamma, 'coef0': coeff_svm}
     KNN_grid = {'n_neighbors': KNN_neighbors, 'weights': KNN_weighting}

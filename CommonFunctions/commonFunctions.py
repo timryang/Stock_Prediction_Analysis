@@ -291,31 +291,30 @@ def create_NB_text_classifier(x_total, y_total, trainSize, stopwordsList, useIDF
 def classifier_statistics(x_test, y_truth, clf, doHTML=False):
     y_predict = clf.predict(x_test)
     class_names = clf.classes_
-    report = classification_report(y_truth, y_predict, labels=class_names, output_dict=doHTML)
-    if doHTML:
-        reportDF = pd.DataFrame()
-        reportDF['Class/Metric'] = pd.Series(list(report.keys()))
-        precision_list = []
-        recall_list = []
-        f1_list = []
-        support_list = []
-        total_support = report[list(report.keys())[3]]['support']
-        for key, value in report.items():
-            if (key != 'accuracy'):
-                precision_list.append(round(value['precision'], 2))
-                recall_list.append(round(value['recall'], 2))
-                f1_list.append(round(value['f1-score'], 2))
-                support_list.append(value['support'])
-            else:
-                precision_list.append('')
-                recall_list.append('')
-                f1_list.append(round(value, 2))
-                support_list.append(total_support)
-        reportDF['Precision'] = pd.Series(precision_list)
-        reportDF['Recall'] = pd.Series(recall_list)
-        reportDF['F1'] = pd.Series(f1_list)
-        reportDF['Support'] = pd.Series(support_list)
-        report = reportDF
+    report = classification_report(y_truth, y_predict, labels=class_names, output_dict=True)
+    reportDF = pd.DataFrame()
+    reportDF['Class/Metric'] = pd.Series(list(report.keys()))
+    precision_list = []
+    recall_list = []
+    f1_list = []
+    support_list = []
+    total_support = report[list(report.keys())[3]]['support']
+    for key, value in report.items():
+        if (key != 'accuracy'):
+            precision_list.append(round(value['precision'], 2))
+            recall_list.append(round(value['recall'], 2))
+            f1_list.append(round(value['f1-score'], 2))
+            support_list.append(value['support'])
+        else:
+            precision_list.append('')
+            recall_list.append('')
+            f1_list.append(round(value, 2))
+            support_list.append(total_support)
+    reportDF['Precision'] = pd.Series(precision_list)
+    reportDF['Recall'] = pd.Series(recall_list)
+    reportDF['F1'] = pd.Series(f1_list)
+    reportDF['Support'] = pd.Series(support_list)
+    report = reportDF
     if not doHTML:                
         print("\nModel Results: ")
         print(report)
