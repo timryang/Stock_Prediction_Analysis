@@ -61,7 +61,10 @@ class Stock_Dependency_Analyzer():
         metricCloseDiff = np.array([metricCloseData[i+metricInterval]-metricCloseData[i] \
                                     for i in range(metricCloseData.shape[0]-metricInterval)])
         metricPercDiff = metricCloseDiff / metricCloseData[:-metricInterval]
-        self.scaleTF_ = StandardScaler().fit(metricPercDiff)
+        if metricPercDiff.ndim == 1:
+            self.scaleTF_ = StandardScaler().fit(metricPercDiff.reshape(-1,1))
+        else:
+            self.scaleTF_ = StandardScaler().fit(metricPercDiff)
         
         # Compute analyze percent change
         analyzeDates = dates[metricInterval:-analyzeInterval]
