@@ -8,9 +8,11 @@
         My goal is to use machine learning theory and algorithms to provide market indicators and reduce risk for investment decisions.<br><br>
         This web app currently supports two methods of analysis:<br>
         1. Twitter Sentiment<br>
-        2. Mutliptle Stock Dependencies<br><br>
+        2. Mutliptle Stock Dependencies<br>
+        3. Stock Buy/Sell Timing Analysis<br><br>
         Twitter Sentiment uses the Naive Bayes algorithm. However, it currently does not support collecting more than ~500 tweets due to a timeout limitation on Heroku's server. Background processing has not been implemented.<br><br>
         Multiple Stock Dependencies currently uses the logistic regression, SVM, and KNN algorithms. <br><br>
+        Stock Buy/Sell Timing Analysis uses standard statistics to determine sell and buy triggers. <br><br>
         Finally, there is no form validation or error catching. So if you get an error, it might be likely that your inputs are bad or you exceeded the timeout limitation (which again should be around ~500 tweets). <br><br>
         Select a link at the top of the page to start! - Tim
         </p>
