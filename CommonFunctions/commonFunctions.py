@@ -30,6 +30,7 @@ from mpl_toolkits.mplot3d import Axes3D
 import io
 import base64
 from sklearn.model_selection import cross_validate
+from scipy import stats
 
 warnings.filterwarnings("ignore")
 
@@ -172,16 +173,18 @@ def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, is
         plt.show()
         return "used matplotlib"
 
-def plot_hist(values, x_label, y_label, title, isBokeh):
+def plot_hist(values, bin_interval, x_label, y_label, title, isBokeh):
     if isBokeh:
-        hist, edges = np.histogram(values, density=True, bins=int(np.ceil(np.max(values)/15)))
+        bins = int(np.ceil(np.max(values)/bin_interval))
+        hist, edges = np.histogram(values, density=True, bins=bins)
         p = figure(tools="pan,box_zoom,reset,save", title=title,\
            x_axis_label=x_label, y_axis_label='Percentage',\
                plot_width=350, plot_height=310)
         p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color="white")
         return p
     else:
-        plt.hist(values, bins = range(np.max(values)))
+        bins = np.arange(np.min(values), np.max(values), bin_interval)
+        plt.hist(values, bins = bins)
         plt.title(title)
         plt.xlabel(x_label)
         plt.ylabel(y_label)

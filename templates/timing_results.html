@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <body>
+        <div class="leftside_dependency">
+    		<div class="lefside_dependency_form">
+        		<form action="/timing_results" method="POST">
+
+                    <p style="color:red">*Required fields<br></p>
+                    <p>Multiple entires are allowed for certain fields:<br> - Comma separated or start:inc:end</p>
+
+        			<h3>Stock Data Parameters:</h3>
+        			<label>Ticker<span style="color: #ff0000">*</span>:</label><input type='text' name='ticker' value = {{ ticker }}><br>
+        			<label>Years of Data<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='years' value= {{ years }}> Allows decimals<br>
+
+        			<h3>Parameters:</h3>
+        			<label>Neg Threshold<span style="color: #ff0000">*</span>:</label><input type='text' name='neg_threshold' value={{ neg_threshold }}> %<br>
+                    <label>Pos Threshold<span style="color: #ff0000">*</span>:</label><input type='text' name='pos_threshold' value={{ pos_threshold }}> %<br>
+                    <label>Sell Adjustment<span style="color: #ff0000">*</span>:</label><input type='text' name='sell_adj' value={{ sell_adj }}> +(std*X)<br>
+                    <label>Buy Adjustment<span style="color: #ff0000">*</span>:</label><input type='text' name='buy_adj' value={{ buy_adj }}> -(std*X)<br>
+
+                    <br>
+
+        			<input type='submit' value='Analyze'>
+
+        		</form>
+
+    		</div>
+            <div class="dependency_prediction">
+                <h4>Statistics:</h4>
+
+                {{ stats_df|safe }} <br><br>
+                {{ results_df|safe }} <br>
+
+            </div>
+        </div>
+
+        <div class="rightside_dependency_plot">
+
+            {{ script_p|safe }}
+            {{ div_p|safe }}
+
+        </div>
+
+        <div class="timing_histograms">
+
+            {{ script_p_hist|safe }}
+            {{ div_p_hist|safe }}
+
+        </div>
+
+
+    </body>
+{% endblock %}

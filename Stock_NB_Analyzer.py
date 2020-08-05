@@ -115,7 +115,8 @@ class Stock_NB_Analyzer:
         
         dates = pd.to_datetime(self.stockData_['Date'])
         
-        p_hist = plot_hist(self.tweetsDF_['Retweets'].values, title='Distribution of Retweets',\
+        bin_interval = 15
+        p_hist = plot_hist(self.tweetsDF_['Retweets'].values, bin_interval, title='Distribution of Retweets',\
                            x_label='# of Retweets', y_label='Occurences', isBokeh=isBokeh)
         
         stockClose = self.stockData_['Close'].values

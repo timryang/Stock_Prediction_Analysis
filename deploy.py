@@ -10,6 +10,7 @@ from flask import Flask, render_template, request
 from bokeh.embed import components
 from Stock_NB_Analyzer import *
 from Stock_Dependency_Analyzer import *
+from Stock_Timing_Analyzer import *
 from nltk.corpus import stopwords
 from sqlalchemy import create_engine
 import pandas as pd
@@ -271,4 +272,34 @@ def dependency_results():
                                                report_knn=report_list[1], conf_mat_knn=conf_mat_list[1], scores_knn=scores_list[1],\
                                                    report_rf=report_list[2], conf_mat_rf=conf_mat_list[2], scores_rf=scores_list[2],\
                                                        pred_df=predictionDF)
-        
+
+@app.route('/define_timing', methods=['GET', 'POST'])
+def define_timing_parameters():
+    return render_template('timing_results.html', ticker='QQQ', years=1, neg_threshold='0:0.005:0.02', pos_threshold='0:0.005:0.02', \
+                           sell_adj='0:0.25:1', buy_adj='0:0.25:1')
+
+@app.route('/timing_results', methods=['GET', 'POST'])
+def timing_results():
+    
+    ticker = request.form['ticker']
+    years = float(request.form['years'])
+    
+    neg_thresh = parse_input(request.form['neg_threshold'], 0, expect_output='float')
+    pos_thresh = parse_input(request.form['pos_threshold'], 0, expect_output='float')
+    sell_adj = parse_input(request.form['sell_adj'], 0, expect_output='float')
+    buy_adj = parse_input(request.form['buy_adj'], 0, expect_output='float')
+    
+    timing_analyzer = Stock_Timing_Analyzer()
+    timing_analyzer.collect_data(ticker, years)
+    stats_df, results_df, p_hist, p, best_neg_thresh, best_pos_thresh, best_sell_adj, best_buy_adj \
+                = Stock_Timing_Grid_Search(timing_analyzer, neg_thresh, pos_thresh,  sell_adj, buy_adj, doHTML=True)
+    
+    script_p_hist, div_p_hist = components(p_hist)
+    script_p, div_p = components(p)
+    
+    stats_df = stats_df.to_html()
+    results_df = results_df.to_html(index=False)
+    
+    return render_template('timing_results.html', ticker=ticker, years=years, neg_threshold=best_neg_thresh, pos_threshold=best_pos_thresh, \
+                           sell_adj=best_sell_adj, buy_adj=best_buy_adj, stats_df=stats_df, results_df=results_df, \
+                               script_p=script_p, div_p=div_p, script_p_hist=script_p_hist, div_p_hist=div_p_hist)
