@@ -21,7 +21,7 @@ from operator import itemgetter
 import warnings
 from nltk.corpus import stopwords
 import time
-import datetime
+from datetime import datetime
 from bokeh.plotting import figure
 from bokeh.palettes import Dark2_8 as palette
 import bokeh.layouts
@@ -31,6 +31,8 @@ import io
 import base64
 from sklearn.model_selection import cross_validate
 from scipy import stats
+
+plt.rcParams.update({'font.size': 22})
 
 warnings.filterwarnings("ignore")
 
@@ -126,11 +128,12 @@ def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
 
 #%% Stock functions
 
-def collect_stock_data(ticker, years):
-        oneYearUnix = 31536000
+def collect_stock_data(ticker, start_date, end_date):
+        start_unix = datetime.timestamp(datetime.strptime(start_date, '%m-%d-%Y'))
+        end_unix = datetime.timestamp(datetime.strptime(end_date, '%m-%d-%Y'))
         tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
-            + "?period1=" + str(int(time.time())-round((oneYearUnix*years))) + "&period2="\
-                + str(int(time.time())) + "&interval=1d&events=history"
+            + "?period1=" + str(int(start_unix)) + "&period2="\
+                + str(int(end_unix)) + "&interval=1d&events=history"
         try:
             stockData = pd.read_csv(tempLink)
         except:
@@ -139,7 +142,9 @@ def collect_stock_data(ticker, years):
     
 #%% Plot functions
 
-def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, isBokeh=False):
+def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, default_lines=True, lines=['-'], isBokeh=False):
+    if default_lines:
+        lines = np.tile(np.array(lines),len(labels))
     if isBokeh:
         if isDates:
             axis_type = "datetime"
@@ -155,21 +160,24 @@ def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, is
     else:      
         plt.figure(figsize=(20,10))
         if isDates:
-            formatter = mdates.DateFormatter("%m-%d")
+            formatter = mdates.DateFormatter("%m-%d-%Y")
             locator = mdates.DayLocator(bymonthday=[1, 15])
             ax = plt.gca()
             ax.xaxis.set_major_formatter(formatter)
             ax.xaxis.set_major_locator(locator)
             for idx, i_y_values in enumerate(y_values):
-                plt.plot_date(x_values[idx], i_y_values, '-', label=labels[idx])
+                plt.plot_date(x_values[idx], i_y_values, lines[idx], label=labels[idx])
             plt.xticks(rotation = 70)
         else:
             for idx, i_y_values in enumerate(y_values):
-                plt.plot(x_values[idx], i_y_values, '-', label=labels[idx])
+                plt.plot(x_values[idx], i_y_values, lines[idx], label=labels[idx])
         plt.title(title)
         plt.xlabel(x_label)
         plt.ylabel(y_label)
-        plt.legend()
+        plt.grid()
+        handles, labels_return = plt.gca().get_legend_handles_labels()
+        by_label = dict(zip(labels_return, handles))
+        plt.legend(by_label.values(), by_label.keys())
         plt.show()
         return "used matplotlib"
 
