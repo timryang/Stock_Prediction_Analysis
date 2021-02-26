@@ -3,18 +3,16 @@
 {% block content %}
     <body class="medium_font">
         <h2>Stock Analysis</h2>
-        <h3>Background</h3>
-        <p>Welcome to my stock analysis web app!<br>
-        My goal is to use machine learning theory and algorithms to provide market indicators and reduce risk for investment decisions.<br><br>
-        This web app currently supports two methods of analysis:<br>
-        1. Twitter Sentiment<br>
-        2. Mutliptle Stock Dependencies<br>
-        3. Stock Buy/Sell Timing Analysis<br><br>
-        Twitter Sentiment uses the Naive Bayes algorithm. However, it currently does not support collecting more than ~500 tweets due to a timeout limitation on Heroku's server. Background processing has not been implemented.<br><br>
-        Multiple Stock Dependencies currently uses the logistic regression, SVM, and KNN algorithms. <br><br>
-        Stock Buy/Sell Timing Analysis uses standard statistics to determine sell and buy triggers. <br><br>
-        Finally, there is no form validation or error catching. So if you get an error, it might be likely that your inputs are bad or you exceeded the timeout limitation (which again should be around ~500 tweets). <br><br>
-        Select a link at the top of the page to start! - Tim
+        <h3>Hello there, and welcome to my lazily formatted web app!</h3>
+        <p>The goal of this web app is to use machine learning and algorithms (cue other fancy terms) to predict market prices and make you lots of money (or lose lots of money - who really knows, just flip a coin).<br><br>
+        This web app currently supports one lonely method of analysis:<br>
+        1. Technical Indicator Analysis<br><br>
+       	Using technical indicators, I create pretty plots and use the outputs of technical indicators as inputs into a machine learning algorithm (SVR) to predict price changes. A lot of parameters are user adjustable so have it. If you don't know what they mean, too bad look them up on Google.<br><br>
+        Once upon a time, I had a cool Twitter sentiment analyzer and predictor for market prices, but Twitter decided to lock the secret doors that GetOldTweets3 (Tweet scraping library) used. Lame.<br><br>
+        With the rise of the reddit mob (hi GameStop 2021), I'd like to use a reddit API to analyze reddit sentiment concerning stock. When I get some free time... Eventually. <br><br>
+        LASTLY, I was too lazy to put in form validation. So if you get errors, it's your own dang fault. Definitely not my code ;) <br><br>
+        P.S. It's definitely a good idea to trust all your life savings on this. <br><br>
+        - Tim
         </p>
 
     </body>

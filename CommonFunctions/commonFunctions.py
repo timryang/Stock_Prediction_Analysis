@@ -21,9 +21,9 @@ from operator import itemgetter
 import warnings
 from nltk.corpus import stopwords
 import time
-from datetime import datetime
+import datetime
 from bokeh.plotting import figure
-from bokeh.palettes import Dark2_8 as palette
+from bokeh.palettes import Category10_10 as palette
 import bokeh.layouts
 from CommonFunctions.TweetCriteria_TRY import TweetCriteria as TC_TRY
 from mpl_toolkits.mplot3d import Axes3D
@@ -31,6 +31,7 @@ import io
 import base64
 from sklearn.model_selection import cross_validate
 from scipy import stats
+import holidays
 
 plt.rcParams.update({'font.size': 22})
 
@@ -39,6 +40,12 @@ warnings.filterwarnings("ignore")
 #%% Common functions to import
 
 #%% Common functions
+
+def next_business_day(day_ref):
+    next_day = day_ref + datetime.timedelta(days=1)
+    while next_day.weekday() in holidays.WEEKEND or next_day in holidays.US():
+        next_day += datetime.timedelta(days=1)
+    return next_day
 
 def rename_date_field(df):
     dfColumns = df.columns
@@ -129,8 +136,8 @@ def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
 #%% Stock functions
 
 def collect_stock_data(ticker, start_date, end_date):
-        start_unix = datetime.timestamp(datetime.strptime(start_date, '%m-%d-%Y'))
-        end_unix = datetime.timestamp(datetime.strptime(end_date, '%m-%d-%Y'))
+        start_unix = datetime.datetime.timestamp(datetime.datetime.strptime(start_date, '%m-%d-%Y'))
+        end_unix = datetime.datetime.timestamp(datetime.datetime.strptime(end_date, '%m-%d-%Y'))
         tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
             + "?period1=" + str(int(start_unix)) + "&period2="\
                 + str(int(end_unix)) + "&interval=1d&events=history"
@@ -154,7 +161,15 @@ def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, de
            x_axis_label=x_label, y_axis_label=y_label, x_axis_type=axis_type,\
                plot_width=525, plot_height=310)
         for idx, i_y_values in enumerate(y_values):
-            p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=palette[idx])
+            if lines[idx] == '-':
+                p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=palette[idx])
+            else:
+                color = palette[int(lines[idx][0])]
+                style = lines[idx][1:]
+                if style=='dot':
+                    p.circle(x_values[idx],i_y_values, legend_label=labels[idx], color=color, size=5)
+                else:    
+                    p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=color, line_dash=style)
         p.legend.location = "top_left"
         return p
     else:      
