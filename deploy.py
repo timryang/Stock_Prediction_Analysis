@@ -80,8 +80,10 @@ def ta_results():
     svr_p = ta_analyzer.preprocess_and_train(days_ahead,days_evaluate,train_size,do_smooth,SVM_kernel,SVM_C,SVM_eps,SVM_degree,True)
     
     p = bokeh.layouts.row(analysis_p, svr_p, sizing_mode='stretch_both')
-    
     script_p, div_p = components(p)
+    
+    # script_an_p, div_an_p = components(analysis_p)
+    # script_svr_p, div_svr_p = components(svr_p)
     
     return render_template('ta_results.html', ticker=ticker, start_date=start_date, recollect_data=recollect_data,\
                            slow_ema=slow_ema, fast_ema=fast_ema, signal_ema=signal_ema, rsi_sell_thresh=rsi_sell_thresh, rsi_buy_thresh=rsi_buy_thresh,\
