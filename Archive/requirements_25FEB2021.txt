@@ -22,7 +22,7 @@ pyparsing==2.4.7
 pyquery==1.4.1
 python-dateutil==2.8.1
 pytz==2020.1
-PyYAML==5.3.1
+PyYAML==5.4
 regex==2020.5.14
 scikit-learn==0.23.1
 scipy==1.4.1
