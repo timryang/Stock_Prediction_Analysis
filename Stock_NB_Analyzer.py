@@ -18,10 +18,9 @@ class Stock_NB_Analyzer:
         self.tfTransformer_ = TfidfTransformer()
         self.clf_ = MultinomialNB()
         
-    def collect_tweets(self, userName, geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets, lang):
-        self.tweetsDF_ = get_tweets(querySearch, userName=userName, startDate=sinceDate, stopDate=untilDate,\
-                          geoLocation=geoLocation, distance =distance,\
-                              topTweets=topTweets, numMaxTweets=maxTweets, lang=lang)
+    def collect_tweets(self, userName, sinceDate, untilDate, querySearch, maxTweets, lang='en'):
+        self.tweetsDF_ = get_tweets(querySearch, startDate=sinceDate, stopDate=untilDate,\
+                                    maxTweets=maxTweets, userName=userName, lang=lang)
     
     def load_tweets(self, directory):
         if isinstance(directory, pd.DataFrame):
@@ -29,8 +28,8 @@ class Stock_NB_Analyzer:
         else:
             self.tweetsDF_ = pd.read_csv(directory)
         
-    def collect_data(self, ticker, years):
-        stockData = collect_stock_data(ticker, years)
+    def collect_data(self, ticker, startDate):
+        stockData = collect_stock_data(ticker, startDate)
         self.stockData_ = stockData
         
     def load_data(self, directory):
@@ -44,29 +43,27 @@ class Stock_NB_Analyzer:
         stockClose = self.stockData_['Close'].values
         diffInterval = np.array([stockClose[i+deltaInterval]-val for i, val in enumerate(stockClose[:-deltaInterval])])
         diffInterval = diffInterval/stockClose[:-deltaInterval]
-        stockDates = self.stockData_['Date'].values
+        stockDates = [dt.date() for dt in pd.to_datetime(self.stockData_['Date'].values)]
         stockDates = stockDates[:-deltaInterval]
         
         resultsClose = np.where(diffInterval > 0, 'Positive', 'Negative')
         validIdx = np.where(np.abs(diffInterval) > changeFilter)
         
-        lastDate = pd.to_datetime(stockDates[-1])
         tweetDatesAll = np.array([dt.date() for dt in pd.to_datetime(self.tweetsDF_['Date'])])
-        tweetsDF_short = self.tweetsDF_.iloc[np.where(tweetDatesAll <= lastDate)]
+        tweetsDF_short = self.tweetsDF_.iloc[np.where(tweetDatesAll <= stockDates[-1])]
         tweetDates_short = [dt.date() for dt in pd.to_datetime(tweetsDF_short['Date'])]
         
         tweetResults = []
         for idx, tweetDate in enumerate(tweetDates_short):
-            if tweetDate.weekday() >= 4:
-                currentStockDay = tweetDate - datetime.timedelta(days = (tweetDate.weekday() - 4))
+            if (tweetDate.weekday() in holidays.WEEKEND or tweetDate in holidays.US()):
+                currentStockDay = prev_business_day(tweetDate)
             else:
                 currentStockDay = tweetDate
-            currentStockDayStr = str(currentStockDay)
-            while currentStockDayStr not in stockDates:
+            while (currentStockDay not in stockDates and (currentStockDay-stockDates[0]).days>=0):
                 currentStockDay = currentStockDay - datetime.timedelta(days = 1)
-                currentStockDayStr = str(currentStockDay)
-            matchIdx = np.where(stockDates == currentStockDayStr)
-            if matchIdx[0] in validIdx[0]:
+            
+            matchIdx = np.where(np.array(stockDates)==currentStockDay)[0]
+            if (len(matchIdx)>0 and matchIdx[0] in validIdx[0]):
                 tweetResults.append(resultsClose[matchIdx][0])
             else:
                 tweetResults.append('Non-valid')
@@ -104,8 +101,7 @@ class Stock_NB_Analyzer:
             
     def run_prediction(self, userName, geoLocation, distance, txtSearch, numMaxTweets, topTweets, lang, printAll):
         results, predictionTxt = predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
-            txtSearch, userName, geoLocation, distance, numMaxTweets,\
-                topTweets, lang, printAll)
+            txtSearch, userName, numMaxTweets, printAll)
         return results, predictionTxt
     
     def plot_data(self, deltaInterval, isBokeh=False):

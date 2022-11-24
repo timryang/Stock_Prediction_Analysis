@@ -9,25 +9,21 @@ from nltk.corpus import stopwords
 
 #%% Inputs:
     
-doHTML = True
+doHTML = False
 
 ticker = 'MRNA'
-years = 1
+startDate = '01-01-2022'
 
 # Get new if false
-loadTweets = True
-loadData = True
+loadTweets = False
+loadData = False
 
 # Classifier tweet parameters (only used if loadTweets = False):
 userName = None
-geoLocation = None
-distance = None
-sinceDate = '2020-03-01'
-untilDate = '2020-05-14'
+sinceDate = '01-01-2022'
+untilDate = '03-01-2022'
 querySearch = 'MRNA'
-maxTweets = 500
-topTweets = True
-lang = 'en'
+maxTweetsPerDay = 5
 
 # Tweet and data directories:
 tweetDir = './CSV_Files/MRNA_Tweets.csv'
@@ -62,11 +58,11 @@ NB_analyzer = Stock_NB_Analyzer()
 if loadTweets:
     NB_analyzer.load_tweets(tweetDir)
 else:
-    NB_analyzer.collect_tweets(userName, geoLocation, distance, sinceDate, untilDate, querySearch, maxTweets, topTweets, lang)
+    NB_analyzer.collect_tweets(userName, sinceDate, untilDate, querySearch, maxTweetsPerDay)
 if loadData:
     NB_analyzer.load_data(dataDir)
 else:
-    NB_analyzer.collect_data(ticker, years)
+    NB_analyzer.collect_data(ticker, startDate)
 
 NB_analyzer, count_report, p, report, most_inform, conf_mat, deltaInterval, changeThreshold, trainSize, useIDF, do_downsample, stopwordsList = \
         Stock_NB_Grid_Search(NB_analyzer, trainSize, deltaInterval, changeFilter, useIDF, do_downsample, stopwordsList, do_stat, numFeatures, doHTML)

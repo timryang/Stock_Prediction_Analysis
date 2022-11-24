@@ -4,7 +4,7 @@ Created on Sat May 16 19:03:33 2020
 
 @author: timot
 """
-import GetOldTweets3 as got
+# import GetOldTweets3 as got
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -25,13 +25,15 @@ import datetime
 from bokeh.plotting import figure
 from bokeh.palettes import Category10_10 as palette
 import bokeh.layouts
-from CommonFunctions.TweetCriteria_TRY import TweetCriteria as TC_TRY
 from mpl_toolkits.mplot3d import Axes3D
 import io
 import base64
 from sklearn.model_selection import cross_validate
 from scipy import stats
 import holidays
+from bs4 import BeautifulSoup
+import requests
+import snscrape.modules.twitter as sntwitter
 
 plt.rcParams.update({'font.size': 22})
 
@@ -40,6 +42,12 @@ warnings.filterwarnings("ignore")
 #%% Common functions to import
 
 #%% Common functions
+
+def prev_business_day(day_ref):
+    prev_day = day_ref-datetime.timedelta(days=1)
+    while prev_day.weekday() in holidays.WEEKEND or prev_day in holidays.US():
+        prev_day -=  datetime.timedelta(days=1)
+    return prev_day
 
 def next_business_day(day_ref):
     next_day = day_ref + datetime.timedelta(days=1)
@@ -79,23 +87,44 @@ def parse_input(txt_input, blank_fill, expect_output='float'):
 
 #%% Twitter functions
 
-def get_tweets(txtSearch, userName=None, startDate=None, stopDate=None, geoLocation=None,\
-               distance=None, topTweets=True, numMaxTweets=10, lang=None):
-
-    tweetCriteria = TC_TRY()
-    tweetCriteria.setUsername(userName)
-    tweetCriteria.setSince(startDate)
-    tweetCriteria.setUntil(stopDate)
-    tweetCriteria.setNear(geoLocation)
-    tweetCriteria.setWithin(distance)
-    tweetCriteria.setQuerySearch(txtSearch)
-    tweetCriteria.setTopTweets(topTweets)
-    tweetCriteria.setMaxTweets(numMaxTweets)
-    tweetCriteria.setLang(lang)
+def get_tweets_list(txtSearch, startDate=None, stopDate=None, maxTweets=None, userName=None, lang='en'):
     
-    tweets = got.manager.TweetManager.getTweets(tweetCriteria)
-    tweetsParsed = [[tweet.date, tweet.text, tweet.retweets] for tweet in tweets]
-    tweetsDF = pd.DataFrame(tweetsParsed, columns = ['Date', 'Text', 'Retweets'])
+    # Creating list to append tweet data to
+    tweetsList = []
+    
+    if startDate == None:
+        startDate = datetime.datetime.now()
+    else:
+        startDate = datetime.datetime.strptime(startDate, '%m-%d-%Y')
+    if stopDate == None:
+        stopDate = datetime.datetime.now()
+    else:
+        stopDate = datetime.datetime.strptime(stopDate, '%m-%d-%Y')
+    
+    dateRange = [stopDate-datetime.timedelta(days=x) for x in range((stopDate-startDate).days+1)]
+    
+    for iDate in dateRange:
+        # Using TwitterSearchScraper to scrape data and append tweets to list
+        tempStart = iDate.strftime('%Y-%m-%d')
+        tempStop = (iDate+datetime.timedelta(days=1)).strftime('%Y-%m-%d')
+        searchString = txtSearch + ' since:' + tempStart + ' until:' + tempStop + ' lang:' + lang
+        if userName!=None:
+            searchString = searchString + ' from:' + userName
+        for i,tweet in enumerate(sntwitter.TwitterSearchScraper(searchString).get_items()):
+            if maxTweets!=None and i>maxTweets:
+                break
+            tweetsList.append([tweet.date, tweet.id, tweet.content, tweet.user.username,\
+                               tweet.retweetCount, tweet.likeCount])
+        
+    return tweetsList
+
+def get_tweets(txtSearch, startDate=None, stopDate=None, maxTweets=None, userName=None, lang='en'):
+    
+    tweetsList = get_tweets_list(txtSearch, startDate, stopDate, maxTweets, userName, lang)
+    
+    # Creating a dataframe from the tweets list above 
+    tweetsDF = pd.DataFrame(tweetsList, columns=['Date', 'ID', 'Text', 'Username', 'Retweets', 'Likes'])
+    
     tweetsDF.sort_values(by = ['Date'], inplace = True)
     tweetsDF.reset_index(drop = True, inplace = True)
     return tweetsDF
@@ -108,11 +137,8 @@ def count_tweets_by_day(tweets_DF):
     return unique_dates, num_daily_tweets
 
 def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
-                        userName=None, geo_location=None, distance=None, num_max_tweets=0,\
-                            top_tweets=True, lang=None, printAll=False):
-    predictTweets = get_tweets(txt_search, userName=userName, geoLocation=geo_location, \
-                                distance=distance, topTweets=top_tweets,\
-                                    numMaxTweets=num_max_tweets, lang=lang)
+                        userName=None, num_max_tweets=0, printAll=False):
+    predictTweets = get_tweets(txt_search, maxTweets=num_max_tweets)
     tweetText = list(predictTweets['Text'])
     tf_text = transform_text(tweetText, count_vect, tfTransformer)
     predictions = clf.predict(tf_text)
@@ -135,9 +161,12 @@ def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
 
 #%% Stock functions
 
-def collect_stock_data(ticker, start_date, end_date):
+def collect_stock_data(ticker, start_date, end_date=None):
         start_unix = datetime.datetime.timestamp(datetime.datetime.strptime(start_date, '%m-%d-%Y'))
-        end_unix = datetime.datetime.timestamp(datetime.datetime.strptime(end_date, '%m-%d-%Y'))
+        if end_date==None:
+            end_unix = time.time()
+        else:
+            end_unix = datetime.datetime.timestamp(datetime.datetime.strptime(end_date, '%m-%d-%Y'))
         tempLink = "https://query1.finance.yahoo.com/v7/finance/download/" + ticker\
             + "?period1=" + str(int(start_unix)) + "&period2="\
                 + str(int(end_unix)) + "&interval=1d&events=history"
@@ -159,7 +188,7 @@ def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, de
             axis_type = "linear"
         p = figure(tools="pan,box_zoom,reset,save", title=title,\
            x_axis_label=x_label, y_axis_label=y_label, x_axis_type=axis_type,\
-               plot_width=525, plot_height=310)
+               width=525, height=310)
         for idx, i_y_values in enumerate(y_values):
             if lines[idx] == '-':
                 p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=palette[idx])
@@ -181,18 +210,18 @@ def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, de
             ax.xaxis.set_major_formatter(formatter)
             ax.xaxis.set_major_locator(locator)
             for idx, i_y_values in enumerate(y_values):
-                plt.plot_date(x_values[idx], i_y_values, lines[idx], label=labels[idx])
+                ax.plot_date(x_values[idx], i_y_values, lines[idx], label=labels[idx])
             plt.xticks(rotation = 70)
         else:
             for idx, i_y_values in enumerate(y_values):
-                plt.plot(x_values[idx], i_y_values, lines[idx], label=labels[idx])
-        plt.title(title)
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
+                ax.plot(x_values[idx], i_y_values, lines[idx], label=labels[idx])
+        ax.set_title(title)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
         plt.grid()
         handles, labels_return = plt.gca().get_legend_handles_labels()
         by_label = dict(zip(labels_return, handles))
-        plt.legend(by_label.values(), by_label.keys())
+        ax.legend(by_label.values(), by_label.keys())
         plt.show()
         return "used matplotlib"
 
@@ -202,7 +231,7 @@ def plot_hist(values, bin_interval, x_label, y_label, title, isBokeh):
         hist, edges = np.histogram(values, density=True, bins=bins)
         p = figure(tools="pan,box_zoom,reset,save", title=title,\
            x_axis_label=x_label, y_axis_label='Percentage',\
-               plot_width=350, plot_height=310)
+               width=350, height=310)
         p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color="white")
         return p
     else:
