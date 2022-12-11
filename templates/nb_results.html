@@ -2,18 +2,16 @@
 
 {% block content %}
     <body>
-        <div class="leftside_twitter_form">
-            <div>
-                <form action="/nb_results" method="POST">
-
-                    <p style="color:red">*Required fields<br></p>
-                    <p>Multiple entires are allowed for certain fields:<br> - Comma separated or start:inc:end</p>
-
+        <p style="color:red">*Required fields<br></p>
+        <p> Multiple entires are allowed for certain fields: Comma separated or start:inc:end</p>
+        <form action="/nb_results" method="POST">
+            <div class="ivory_row_scroll">
+                <div class="ivory_fourth">
                     <h3>Stock Data Parameters:</h3>
                     <label>Ticker Symbol<span style="color: #ff0000">*</span>:</label><input type='text' name='ticker' value = {{ ticker }}><br>
-                    <label>Years of Data<span style="color: #ff0000">*</span>:</label><input type='number' step=0.01 name='years' value= {{ years }}> Allows decimals<br>
-                    <label>Recollect Data:</label><select name='recollectData'>
-                    {% if recollectData == True %}
+                    <label>Start Date:</label> <input type='text' name='start_date' value={{ start_date }}> MM-dd-YYYY<br>
+                    <label>Recollect Data:</label><select name='recollect_data'>
+                    {% if recollect_data == True %}
                         <option value=1>True</option>
                         <option value=0>False</option>
                     {% else %}
@@ -21,24 +19,16 @@
                         <option value=1>True</option>
                     {% endif %}
                     </select><span style="color: #ff0000"> Must be true initially</span><br>
+                </div>
+
+                <div class="ivory_fourth">
 
                     <h3>Classifier Twitter Parameters:</h3>
                     <label>Username:</label> <input type='text' name='userName' value={{ userName }}> Filter on username<br>
-                    <label>Geo Location:</label> <input type='text' name='geoLocation' value={{ geoLocation }}> Filter on location<br>
-                    <label>Distance (mi):</label><input type='number' name='distance' value={{ distance }}> Within geo location<br>
                     <label>Start Date:</label> <input type='text' name='sinceDate' value={{ sinceDate }}> Filter on dates<br>
                     <label>Stop Date:</label><input type='text' name='untilDate' value={{ untilDate }}><br>
-                    <label>Text Query<span style="color: #ff0000">*</span>:</label><input type='text' name='querySearch' value={{ querySearch }}> Twitter search text<br>
-                    <label>Top Tweets:</label><select name='topTweets'>
-                    {% if topTweets == True %}
-                        <option value=1>True</option>
-                        <option value=0>False</option>
-                    {% else %}
-                        <option value=0>False</option>
-                        <option value=1>True</option>
-                    {% endif %}
-                    </select> Filter on top tweets<br>
-                    <label>Max Tweets:</label><input type='number' name='maxTweets' value={{ maxTweets }}> Limit qty (0 = no limit)<br>
+                    <label>Text Query<span style="color: #ff0000">*</span>:</label><input type='text' name='querySearch' value='{{ querySearch }}'> Twitter search text<br>
+                    <label>Max Tweets:</label><input type='number' name='maxTweets' value={{ maxTweets }}> Daily<br>
                     <label>Language:</label><input type='text' name='lang' value={{ lang }}> Language code<br>
                     <label>Recollect Tweets:</label><select name='recollectTweets'>
                     {% if recollectTweets == True %}
@@ -49,11 +39,13 @@
                         <option value=1>True</option>
                     {% endif %}
                     </select><span style="color: #ff0000"> Must be true initially</span><br>
+                </div>
 
+                <div class="ivory_fourth">
                     <h3>Classifier Parameters:</h3>
                     <label>Analysis Interval<span style="color: #ff0000">*</span>:</label><input type='text' name='deltaInterval' value={{ deltaInterval }}> In days<br>
-                    <label>% Threshold</label><input type='text' name='changeThreshold' value={{ changeThreshold }}> Filter out < threshold<br>
-                    <label>Train Size<span style="color: #ff0000">*</span>:</label><input type='text' name='trainSize' value={{ trainSize }}> % data for training<br>
+                    <label>% Threshold</label><input type='text' name='changeThreshold' value={{ changeThreshold }}> Filter < thresh<br>
+                    <label>Train Size<span style="color: #ff0000">*</span>:</label><input type='text' name='trainSize' value={{ trainSize }}> % train<br>
                     <label>Use IDF:</label><select name='useIDF'>
                     {% if useIDF == True %}
                         <option value=1>True</option>
@@ -64,7 +56,7 @@
                         <option value=1>True</option>
                         <option value='both'>Both</option>
                     {% endif %}
-                    </select> Normalize word frequency<br>
+                    </select> Norm. word freq<br>
                     <label>Do Downsample:</label><select name='do_downsample'>
                     {% if do_downsample == True %}
                         <option value=1>True</option>
@@ -75,7 +67,7 @@
                         <option value=1>True</option>
                         <option value='both'>Both</option>
                     {% endif %}
-                    </select> Downsample for eveness<br>
+                    </select> Downsample to even<br>
                     <label>Use Stopwords:</label><select name='useStopwords'>
                     {% if useStopwords == True %}
                         <option value=1>True</option>
@@ -88,47 +80,37 @@
                     {% endif %}
                     </select> Filter common words<br>
                     <label>Add Stopwords:</label><input type='text' name='addStopwords' value={{ addStopwords }}> Comma separated<br>
+                </div>
 
-                    <h3>Prediction Twitter Parameters:</h3>
-                    <label>Username:</label> <input type='text' name='userNamePredict' value={{ userNamePredict }}> Filter on username<br>
-                    <label>Geo Location:</label> <input type='text' name='geoLocationPredict' value={{ geoLocationPredict }}><br>
-                    <label>Distance (mi):</label><input type='number' name='distancePredict' value={{ distancePredict }}><br>
-                    <label>Text Query<span style="color: #ff0000">*</span>:</label><input type='text' name='querySearchPredict' value={{ querySearchPredict }}><br>
-                    <label>Top Tweets:</label><select name='topTweetsPredict'>
-                    {% if topTweetsPredict == True %}
-                        <option value=1>True</option>
-                        <option value=0>False</option>
-                    {% else %}
-                        <option value=0>False</option>
-                        <option value=1>True</option>
-                    {% endif %}
-                    </select><br>
-                    <label>Max Tweets:</label><input type='number' name='maxTweetsPredict' value={{ maxTweetsPredict }}><br>
-                    <label>Language:</label><input type='text' name='langPredict' value={{ langPredict }}> Language code<br><br>
-
-                    <input type='submit' value='Analyze/Predict'>
-
-                </form>
-
+                <div class="ivory_fourth">
+                        <h3>Prediction Twitter Parameters:</h3>
+                        <label>Username:</label> <input type='text' name='userNamePredict' value={{ userNamePredict }}> Filter on username<br>
+                        <label>Text Query<span style="color: #ff0000">*</span>:</label><input type='text' name='querySearchPredict' value='{{ querySearchPredict }}'><br>
+                        <label>Max Tweets:</label><input type='number' name='maxTweetsPredict' value={{ maxTweetsPredict }}><br>
+                        <label>Language:</label><input type='text' name='langPredict' value={{ langPredict }}> Language code<br><br>
+                </div>
             </div>
-        </div>
+            <input type='submit' value='Analyze/Predict'>
+        </form>
 
-        <div class="rightside_twitter_plot">
-
-            {{ script_p|safe }}
-            {{ div_p|safe }}
-
+        <div class="row">
+            <div class="chart" id="scatter1">
+                <script>
+                    var graphs1 = {{twitter_plot | safe}};
+                    Plotly.plot('scatter1',graphs1,{});
+                </script>
+            </div>
         </div>
 
         <div class="twitter_text_area">
             <div class="twitter_text_1">
                 <h4>Raw Count Report:</h4>
-                {{ count_report|safe }}
+                <div class="showNewLine">{{count_report|safe}}</div>
             </div>
             <div class="twitter_text_2">
                 <h4>Classifier Stats:</h4>
                 {{ report|safe }}<br>
-                {{ confusion_matrix|safe }}
+                {{ conf_mat|safe }}
             </div>
             <div class="twitter_text_3">
                 <h4>Most Informative Words:</h4>
@@ -139,12 +121,10 @@
         <div class="twitter_pred_area">
             <div class="twitter_results_area">
                 <h4>Prediction Results:</h4>
-                <div>
-                    {{ pred_results|safe }}
-                </div>
+                <div class="showNewLine">{{pred_results|safe}}</div>
             </div>
             <div class="tweet_results">
-                {{ pred_text|safe }}
+                <div class="showNewLine">{{pred_text|safe}}</div>
             </div>
         </div>
 

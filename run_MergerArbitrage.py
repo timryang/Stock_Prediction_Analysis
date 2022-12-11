@@ -33,6 +33,7 @@ merger_analyzer.find_probability(acqPrice)
 merger_analyzer.collectTweets(searchString, probThresh, dayGuard, maxTweets)
 merger_analyzer.evalDictionStats()
 merger_analyzer.plot_data()
+merger_analyzer.requeryTweets('ATVI AND MSFT','12-08-2022',10)
 
 #%% Testing
 

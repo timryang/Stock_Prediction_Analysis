@@ -15,6 +15,7 @@ class Merger_Arbitrage():
     def __init__(self):
         self.analyzeTicker_ = ''
         self.refTicker_ = ''
+        self.announceDate_ = ''
         self.analyzeStockData_ = pd.DataFrame()
         self.refStockData_ = pd.DataFrame()
         self.acqPrice_ = []
@@ -26,10 +27,22 @@ class Merger_Arbitrage():
         self.allLossTxt_ = [];
         self.annotateDates_ = [];
         self.annotateTxt_ = [];
+        self.userName_ = ''
+        self.searchString_ = ''
+        self.maxTweets_ = []
+        self.language_ = ''
+        self.probThresh_ = []
+        self.dayGuard_ = []
+        self.mostInform_ = pd.DataFrame()
+        self.fig1_ = go.Figure()
+        self.fig2_ = go.Figure()
+        self.tweetString_ = ''
+        
         
     def collect_data(self, analyzeTicker, refTicker, announceDate):
         self.analyzeTicker_ = analyzeTicker
         self.refTicker_ = refTicker
+        self.announceDate_ = announceDate
         
         # Get previous business day
         announceDatetime = datetime.datetime.strptime(announceDate, '%m-%d-%Y')
@@ -37,7 +50,7 @@ class Merger_Arbitrage():
         
         self.analyzeStockData_ = collect_stock_data(analyzeTicker, startDate)
         self.refStockData_ = collect_stock_data(refTicker, startDate)
-        self.dates_ = pd.to_datetime(self.analyzeStockData_['Date'])
+        self.dates_ = pd.to_datetime(self.analyzeStockData_['Date']).tolist()
         
     def find_probability(self, acqPrice):
         
@@ -53,7 +66,7 @@ class Merger_Arbitrage():
         self.fallPrice_ = fallPrice
         self.acqPrice_ = acqPrice
         
-    def collectTweets(self, searchString, probThresh, dayGuard, maxTweets):
+    def collectTweets(self, searchString, probThresh, dayGuard, maxTweets, userName=None, lang='en'):
         probDiff = np.diff(self.probAcq_)[1::]*100
         stockDates = self.dates_[2::]
         
@@ -61,11 +74,11 @@ class Merger_Arbitrage():
         annotateDates = []
         
         gainIdx = np.where(probDiff>probThresh,True,False)
-        gainDates = stockDates[gainIdx]
+        gainDates = np.array(stockDates)[gainIdx]
         gainTweets = []
         for i,iterDate in enumerate(gainDates):
             stopDate = iterDate+datetime.timedelta(days=dayGuard-1)
-            tempTweets = get_tweets_list(searchString,iterDate.strftime('%m-%d-%Y'),stopDate.strftime('%m-%d-%Y'),maxTweets)
+            tempTweets = get_tweets_list(searchString,iterDate.strftime('%m-%d-%Y'),stopDate.strftime('%m-%d-%Y'),maxTweets,userName,lang)
             gainTweets.extend(tempTweets)
             tweetScore = np.array([tweet[4]+tweet[5] for tweet in tempTweets])
             bestTweet = tempTweets[np.argmax(tweetScore)]
@@ -75,11 +88,11 @@ class Merger_Arbitrage():
         self.allGainTxt_ = [tweet[2] for tweet in gainTweets]
         
         lossIdx = np.where(probDiff<-probThresh,True,False)
-        lossDates = stockDates[lossIdx]
+        lossDates = np.array(stockDates)[lossIdx]
         lossTweets = []
         for i,iterDate in enumerate(lossDates):
             stopDate = iterDate+datetime.timedelta(days=dayGuard-1)
-            tempTweets = get_tweets_list(self.analyzeTicker_,iterDate.strftime('%m-%d-%Y'),stopDate.strftime('%m-%d-%Y'),maxTweets)
+            tempTweets = get_tweets_list(self.analyzeTicker_,iterDate.strftime('%m-%d-%Y'),stopDate.strftime('%m-%d-%Y'),maxTweets,userName,lang)
             lossTweets.extend(tempTweets)
             tweetScore = np.array([tweet[4]+tweet[5] for tweet in tempTweets])
             bestTweet = tempTweets[np.argmax(tweetScore)]
@@ -92,71 +105,70 @@ class Merger_Arbitrage():
         self.annotateTxt_ = [annotateTxt[i] for i in sortIdx]
         self.annotateDates_ = [annotateDates[i] for i in sortIdx]
         
-    def evalDictionStats(self, trainSize=0.9, stopwordsList=stopwords.words('english'), useIDF=True):
+        self.searchString_ = searchString
+        self.probThresh_ = probThresh
+        self.dayGuard_ = dayGuard
+        self.maxTweets_ = maxTweets
+        self.userName_ = userName
+        self.language_ = lang
+        
+    def requeryTweets(self, searchString, searchDate, maxTweets, userName=None, lang='en'):
+        searchDatetime = datetime.datetime.strptime(searchDate, '%m-%d-%Y')
+        tempTweets = get_tweets_list(searchString,searchDatetime.strftime('%m-%d-%Y'),searchDatetime.strftime('%m-%d-%Y'),100,userName,lang)
+        tweetScore = np.array([tweet[4]+tweet[5] for tweet in tempTweets])
+        sortIndices = np.flip(np.argsort(tweetScore))
+        if len(sortIndices) < maxTweets:
+            maxTweets = len(sortIndices)
+        topIndices = sortIndices[:maxTweets]
+        requeryString = ''
+        for idx in topIndices:
+            requeryString += str(tempTweets[idx][0].strftime('%m-%d-%Y'))+': '+tempTweets[idx][2]+'\n\n'
+        return requeryString
+        
+    def evalDictionStats(self, trainSize=0.9, stopwordsList=stopwords.words('english'), useIDF=True, doHTML=True):
         x_values = self.allGainTxt_ + self.allLossTxt_
         y_values = ['Pos']*len(self.allGainTxt_)+['Neg']*len(self.allLossTxt_)
-        clf, count_vect, tfTransformer, report, most_inform, p = create_NB_text_classifier(x_values, y_values, trainSize, stopwordsList, useIDF)
+        clf, count_vect, tfTransformer, report, most_inform, p = create_NB_text_classifier(x_values, y_values, trainSize, stopwordsList, useIDF, doHTML=doHTML)
+        self.mostInform_ = most_inform
+        return most_inform
         
-    def plot_data(self):
+    def plot_data(self, doHTML=False):
         
         # First Plot
-        x_values = [self.dates_, self.dates_, self.dates_]
-        y_values = [self.analyzeStockData_['Close'].values, self.fallPrice_, self.acqPrice_*np.ones(np.size(self.fallPrice_))]
-        labels = ['Actual', 'Market', 'Acq. Price']
+        closeDataTrace = go.Scatter(x=self.dates_, y=self.analyzeStockData_['Close'].values, name='Actual', yaxis='y1')
+        fallDataTrace = go.Scatter(x=self.dates_, y=self.fallPrice_, name='Market', yaxis='y1')
+        acqPriceTrace = go.Scatter(x=self.dates_, y=self.acqPrice_*np.ones(np.size(self.fallPrice_)), name='Acq. Price', yaxis='y1')
+        probAcqTrace = go.Scatter(x=self.dates_, y=self.probAcq_*100, name='Acq. Prob', line={'dash': 'dash'}, yaxis='y2')
+        percFallTrace = go.Scatter(x=self.dates_, y=self.percFall_*100, name='Fall Perc.', line={'dash': 'dash'}, yaxis='y2')
+        layout = go.Layout(title=self.analyzeTicker_, yaxis=dict(title='Price'), yaxis2=dict(title='Percentage',\
+                           overlaying='y', side='right'), xaxis=dict(title='Date'),\
+                           legend={'orientation': 'h', 'y': -0.2}, showlegend=True)
+        fig1 = go.Figure(data=[closeDataTrace,fallDataTrace,acqPriceTrace,probAcqTrace,percFallTrace], layout=layout)
         
-        lines = np.tile(np.array(['-']),len(labels)+1)
-        plt.figure(figsize=(20,10))
-        formatter = mdates.DateFormatter("%m-%d-%Y")
-        locator = mdates.DayLocator(bymonthday=[1, 15])
-        ax = plt.gca()
-        ax.xaxis.set_major_formatter(formatter)
-        ax.xaxis.set_major_locator(locator)
-        plt.xticks(rotation = 70)
-        ax.set_title(self.analyzeTicker_)
-        ax.set_xlabel('Date')
-        
-        for idx, i_y_values in enumerate(y_values):
-            ax.plot_date(x_values[idx], i_y_values, lines[idx], label=labels[idx])
-        handles, labels_return = ax.get_legend_handles_labels()
-        by_label = dict(zip(labels_return, handles))
-        ax.legend(by_label.values(), by_label.keys())
-        ax.set_ylabel('Price')
-        
-        ax2 = ax.twinx()
-        ax2.plot_date(self.dates_, self.probAcq_*100, 'k--', label = 'Acq. Prob')
-        ax2.plot_date(self.dates_, self.percFall_*100, 'r--', label = 'Fall Perc.')
-        ax2.legend(['Acq. Prob', 'Fall Perc.'], loc = 'lower center')
-        ax2.set_ylabel('Prob (%)')
-        
-        plt.grid()
-        plt.show()
+        if not doHTML:
+            plot(fig1)
         
         # Second plot
-        plt.figure(figsize=(20,10))
-        formatter = mdates.DateFormatter("%m-%d-%Y")
-        locator = mdates.DayLocator(bymonthday=[1, 15])
-        ax = plt.gca()
-        ax.xaxis.set_major_formatter(formatter)
-        ax.xaxis.set_major_locator(locator)
-        plt.xticks(rotation = 70)
-        ax.set_title('Probability Acquisition')
-        ax.set_xlabel('Date')
-        ax.plot_date(self.dates_, self.probAcq_*100, 'k-', label='Acq. Prob')
-        ax.set_ylabel('Prob (%)')
-        ax.set_ylim([np.min([0,np.min(self.probAcq_*100)-10]), np.max(self.probAcq_*100)+10])
-        
+        tweetString = ''
+        fig2 = go.Figure()
+        fig2.add_trace(go.Scatter(x=self.dates_[1::], y=self.probAcq_[1::]*100, name='Acq. Prob'))
         for iTxt,iDate in enumerate(self.annotateDates_):
-            yVal = self.probAcq_[np.where(np.array([self.dates_])[0]==iDate)[0][0]]*100
+            yVal = self.probAcq_[np.where(np.array(self.dates_)==iDate)[0][0]]*100
             xTxt = self.annotateDates_[iTxt]+datetime.timedelta(days=5)
             if  (iTxt%2==0):
                 yTxt = yVal-5
             else:
                 yTxt = yVal+5
-            ax.annotate(str(iTxt), xy = (self.annotateDates_[iTxt], yVal),\
-                 fontsize = 20, xytext = (xTxt, yTxt),\
-                 arrowprops = dict(facecolor = 'red'),\
-                 color = 'g')
-            print('['+str(iTxt)+'] '+str(iDate.strftime('%m-%d-%Y'))+' : '+self.annotateTxt_[iTxt]+'\n')
+            fig2.add_annotation(x=self.annotateDates_[iTxt], y=yVal, text=str(iTxt), showarrow=True, arrowhead=1)
+            tweetString += '['+str(iTxt)+'] '+str(iDate.strftime('%m-%d-%Y'))+' : '+self.annotateTxt_[iTxt]+'\n\n'
+        fig2.update_layout(title='Probabiliy Acquisition', xaxis_title='Date', yaxis_title='Prob (%)', showlegend=False)
         
-        plt.grid()
-        plt.show()
+        if not doHTML:
+            plot(fig2)
+            print(tweetString)
+        
+        self.fig1_ = fig1
+        self.fig2_ = fig2
+        self.tweetString_ = tweetString
+        
+        return fig1, fig2, tweetString

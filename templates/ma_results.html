@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <body>
+        <p style="color:red">*Required fields<br></p>
+        <div class="half_column">
+            <form action="/ma_results" method="POST">
+                <div class="ivory_row_scroll">
+                    <div class="ivory_half">
+            			<h3>Stock Data Parameters:</h3>
+            			<label>Ticker:<span style="color: #ff0000">*</span>:</label><input type='text' name='analyzeTicker' value = {{ analyzeTicker }}><br>
+            			<label>Announce Date:<span style="color: #ff0000">*</span></label> <input type='text' name='announceDate' value={{ announceDate }}> MM-dd-YYYY<br>
+                        <label>Acq. Price:<span style="color: #ff0000">*</span>:</label><input type='text' name='acqPrice' value={{ acqPrice }}><br>
+                        <label>Ref. Ticker:<span style="color: #ff0000">*</span>:</label><input type='text' name='refTicker' value = {{ refTicker }}><br>
+                    </div>
+
+                    <div class="ivory_half">
+                        <h3>Twitter Parameters:</h3>
+                        <label>Username:</label> <input type='text' name='userName' value={{ userName }}> Filter on username<br>
+                        <label>Text Query<span style="color: #ff0000">*</span>:</label><input type='text' name='querySearch' value='{{ querySearch }}'> Twitter search text<br>
+                        <label>Max Tweets:</label><input type='number' name='maxTweets' value={{ maxTweets }}> Daily<br>
+                        <label>Language:</label><input type='text' name='lang' value={{ lang }}> Language code<br>
+                        <label>Daily % Change:</label><input type='text' name='probThresh' value={{ probThresh }}> Collect>change<br>
+                        <label>Collect Days:</label><input type='number' name='dayGuard' value={{ dayGuard }}> # for each<br>
+                    </div>
+                </div>
+                <input type='submit' value='Analyze'>
+            </form>
+        </div>
+
+        <div class="half_column">
+            <form action="/ma_requery" method="POST">
+                <div class="ivory_fourth">
+                    <div class="ivory_row_scroll">
+                        <h3>Re-Query:</h3>
+                        <label>Username:</label>
+                        <input type='text' name='userNameRequery' value={{ userNameRequery }}><br>
+                        <label>Date:<span style="color: #ff0000">*</span></label>
+                        <input type='text' name='requeryDate' value={{ requeryDate }}><br>
+                        <label>Text Query<span style="color: #ff0000">*</span>:</label>
+                        <input type='text' name='requerySearch' value='{{ requerySearch }}'><br>
+                        <label>Num Tweets:</label>
+                        <input type='number' name='requeryNumTweets' value={{ requeryNumTweets }}><br>
+                        <label>Language:</label>
+                        <input type='text' name='requeryLang' value={{ requeryLang }}><br>
+                    </div>
+                </div>
+                <div class="ivory_threefourths">
+                    <div class="ivory_row_scroll">
+                        <h3>Re-Query Tweets:</h3>
+                        <div class="showNewLine">{{requeryString|safe}}</div>
+                    </div>
+                </div>
+                <input type='submit' value='Re-Query'>
+            </form>
+        </div>
+
+        <div class="half_column">
+            <div class="chart" id="scatter1">
+                <script>
+                    var graphs1 = {{fig1 | safe}};
+                    Plotly.plot('scatter1',graphs1,{});
+                </script>
+            </div>
+        </div>
+
+        <div class="half_column">
+            <div class="chart" id="scatter2">
+                <script>
+                    var graphs2 = {{fig2 | safe}};
+                    Plotly.plot('scatter2',graphs2,{});
+                </script>
+            </div>
+        </div>
+
+        <div class="ma_inform">
+            <h4>Most Informative Words:</h4>
+            {{ mostInform|safe }}
+        </div>
+
+        <div class="ma_tweets">
+            <h4>Indexed Tweets:</h4>
+            <div class="showNewLine">{{tweetString|safe}}</div>
+        </div>
+
+
+    </body>
+
+{% endblock %}

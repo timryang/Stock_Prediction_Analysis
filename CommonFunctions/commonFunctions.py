@@ -22,9 +22,6 @@ import warnings
 from nltk.corpus import stopwords
 import time
 import datetime
-from bokeh.plotting import figure
-from bokeh.palettes import Category10_10 as palette
-import bokeh.layouts
 from mpl_toolkits.mplot3d import Axes3D
 import io
 import base64
@@ -34,6 +31,11 @@ import holidays
 from bs4 import BeautifulSoup
 import requests
 import snscrape.modules.twitter as sntwitter
+import plotly
+import plotly.graph_objects as go
+from plotly.offline import plot
+from plotly.subplots import make_subplots
+import json
 
 plt.rcParams.update({'font.size': 22})
 
@@ -82,12 +84,20 @@ def parse_input(txt_input, blank_fill, expect_output='float'):
             output = [float(val) for val in txt_input.split(',')]
         elif expect_output == 'int':
             output = [int(val) for val in txt_input.split(',')]
+        elif expect_output == 'text':
+            output = [val for val in txt_input.split(',')]
     return output
     
 
 #%% Twitter functions
 
 def get_tweets_list(txtSearch, startDate=None, stopDate=None, maxTweets=None, userName=None, lang='en'):
+    
+    if userName=='':
+        userName=None
+    
+    if lang=='':
+        lang='en'
     
     # Creating list to append tweet data to
     tweetsList = []
@@ -129,12 +139,12 @@ def get_tweets(txtSearch, startDate=None, stopDate=None, maxTweets=None, userNam
     tweetsDF.reset_index(drop = True, inplace = True)
     return tweetsDF
 
-def count_tweets_by_day(tweets_DF):
+def count_retweets_by_day(tweets_DF):
     tweet_dates = [str(dt.date()) for dt in pd.to_datetime(tweets_DF['Date'])]
     unique_dates = list(set(tweet_dates))
     unique_dates.sort()
-    num_daily_tweets = [len(find_idx(tweet_dates, date)) for date in unique_dates]
-    return unique_dates, num_daily_tweets
+    num_daily_retweets = [np.sum(tweets_DF['Retweets'].values[find_idx(tweet_dates, date)]) for date in unique_dates]
+    return unique_dates, num_daily_retweets
 
 def predict_from_tweets(clf, count_vect, tfTransformer, txt_search,\
                         userName=None, num_max_tweets=0, printAll=False):
@@ -177,71 +187,6 @@ def collect_stock_data(ticker, start_date, end_date=None):
         return stockData
     
 #%% Plot functions
-
-def plot_values(x_values, y_values, labels, x_label, y_label, title, isDates, default_lines=True, lines=['-'], isBokeh=False):
-    if default_lines:
-        lines = np.tile(np.array(lines),len(labels))
-    if isBokeh:
-        if isDates:
-            axis_type = "datetime"
-        else:
-            axis_type = "linear"
-        p = figure(tools="pan,box_zoom,reset,save", title=title,\
-           x_axis_label=x_label, y_axis_label=y_label, x_axis_type=axis_type,\
-               width=525, height=310)
-        for idx, i_y_values in enumerate(y_values):
-            if lines[idx] == '-':
-                p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=palette[idx])
-            else:
-                color = palette[int(lines[idx][0])]
-                style = lines[idx][1:]
-                if style=='dot':
-                    p.circle(x_values[idx],i_y_values, legend_label=labels[idx], color=color, size=5)
-                else:    
-                    p.line(x_values[idx], i_y_values, legend_label=labels[idx], color=color, line_dash=style)
-        p.legend.location = "top_left"
-        return p
-    else:      
-        plt.figure(figsize=(20,10))
-        if isDates:
-            formatter = mdates.DateFormatter("%m-%d-%Y")
-            locator = mdates.DayLocator(bymonthday=[1, 15])
-            ax = plt.gca()
-            ax.xaxis.set_major_formatter(formatter)
-            ax.xaxis.set_major_locator(locator)
-            for idx, i_y_values in enumerate(y_values):
-                ax.plot_date(x_values[idx], i_y_values, lines[idx], label=labels[idx])
-            plt.xticks(rotation = 70)
-        else:
-            for idx, i_y_values in enumerate(y_values):
-                ax.plot(x_values[idx], i_y_values, lines[idx], label=labels[idx])
-        ax.set_title(title)
-        ax.set_xlabel(x_label)
-        ax.set_ylabel(y_label)
-        plt.grid()
-        handles, labels_return = plt.gca().get_legend_handles_labels()
-        by_label = dict(zip(labels_return, handles))
-        ax.legend(by_label.values(), by_label.keys())
-        plt.show()
-        return "used matplotlib"
-
-def plot_hist(values, bin_interval, x_label, y_label, title, isBokeh):
-    if isBokeh:
-        bins = int(np.ceil(np.max(values)/bin_interval))
-        hist, edges = np.histogram(values, density=True, bins=bins)
-        p = figure(tools="pan,box_zoom,reset,save", title=title,\
-           x_axis_label=x_label, y_axis_label='Percentage',\
-               width=350, height=310)
-        p.quad(top=hist, bottom=0, left=edges[:-1], right=edges[1:], line_color="white")
-        return p
-    else:
-        bins = np.arange(np.min(values), np.max(values), bin_interval)
-        plt.hist(values, bins = bins)
-        plt.title(title)
-        plt.xlabel(x_label)
-        plt.ylabel(y_label)
-        plt.show()
-        return "used matplotlib"
         
 def plot_multi_scatter(axes_values_list, labels, axes_labels, title, color_values_list=None, saveFig=False):
     # Input axes_values as a list of arrays with n dimensions
@@ -373,12 +318,12 @@ def classifier_statistics(x_test, y_truth, clf, doHTML=False):
     if not doHTML:                
         print("\nModel Results: ")
         print(report)
-    p = show_confusion_matrix(y_truth, y_predict, labels=class_names, isBokeh=doHTML)
+    p = show_confusion_matrix(y_truth, y_predict, labels=class_names, doHTML=doHTML)
     return report, p
 
-def show_confusion_matrix(y_truth, y_predict, labels, isBokeh=False):
+def show_confusion_matrix(y_truth, y_predict, labels, doHTML=False):
     conf_matrix = confusion_matrix(y_truth, y_predict, labels=labels)
-    if not isBokeh:
+    if not doHTML:
         sns.heatmap(conf_matrix, annot=True, xticklabels=labels, yticklabels=labels, cmap='Blues')
         plt.xlabel('Predicted')
         plt.ylabel('Truth')

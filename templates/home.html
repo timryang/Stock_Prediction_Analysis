@@ -2,15 +2,16 @@
 
 {% block content %}
     <body class="medium_font">
-        <h2>Stock Price Analysis</h2>
-        <h3>Hello and welcome to my lazily formatted web app!</h3>
-        <p>Use my machine learning algorithms to predict market prices and make lots of money (or lose even more).<br><br>
-        I currently support one lonely method of analysis:<br>
-        1. Financial Technical Indicator Analysis<br><br>
-       	I create pretty plots and use technical indicators as inputs into machine learning to predict price changes. Parameters are user adjustable so have at it. If you don't know what they are, look them up on Google.<br><br>
-        I had a cool Twitter sentiment predictor for market prices, but Twitter locked the secret doors that GetOldTweets3 used. BUT with the rise of reddit influence (GameStop 2021), I want to analyze reddit sentiment in relation to stock prices. When I get some free time... <br><br>
-        LASTLY, I was too lazy to put in form validation. So if you get errors, it's your own fault. Definitely not my code :) <br><br>
-        You should definitely put all your life savings in this. <br><br>
+        <h2>Stock Market Analysis</h2>
+        <p>I created this these algorithms and analysis tools to practice my software/ML skills and learn more about the market, all while potentially making some money on the side. There's a few tools that are currently availabe for use:<br>
+        <h3>Financial Technical Indicator Analysis</h3>
+       	Use existing technical indicators (MACD, RSI, OBV) as inputs into machine learning (SVR) to predict percent price changes. Parameters for data preprocessing and SVR algorithm are user adjustable.<br>
+        <h3>Twitter Sentiment Analysis</h3>
+        Use NLP to correlate tweets with market changes and use Naive Bayes to predict stock performance from recent tweets. Parameters for data preprocessing and NB algorithm are user adjustable.<br>
+        <h3>Merger Arbitrage Analysis</h3>
+        Find the expected value of acquisition for a publicly traded company with an announced acquisition using a market reference. At each user specified percent change in probabiliy of acquisition, provide the top tweet with user specified search text for that date of change.<br><br>
+
+        There is not a lot of form validation, so just double check your inputs if you hit errors. You should definitely put all your life savings in this. <br><br>
         - Tim
         </p>
 

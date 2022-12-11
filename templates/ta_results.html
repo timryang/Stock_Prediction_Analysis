@@ -2,12 +2,10 @@
 
 {% block content %}
     <body>
-        <div class="leftside_dependency">
-    		<div class="lefside_dependency_form">
-        		<form action="/ta_results" method="POST">
-
-                    <p style="color:red">*Required fields<br></p>
-
+        <p style="color:red">*Required fields<br></p>
+        <form action="/ta_results" method="POST">
+            <div class="ivory_row_scroll">
+                <div class="ivory_fourth">
         			<h3>Stock Data Parameters:</h3>
         			<label>Ticker:<span style="color: #ff0000">*</span>:</label><input type='text' name='ticker' value = {{ ticker }}><br>
         			<label>Start Date:</label> <input type='text' name='start_date' value={{ start_date }}> MM-dd-YYYY<br>
@@ -20,7 +18,9 @@
                         <option value=1>True</option>
                     {% endif %}
                     </select><span style="color: #ff0000"> Must be true initially</span><br>
+                </div>
 
+                <div class="ivory_fourth">
         			<h3>MACD Parameters:</h3>
         			<label>Slow EMA:<span style="color: #ff0000">*</span>:</label><input type='text' name='slow_ema' value={{ slow_ema }}> days<br>
                     <label>Fast EMA:<span style="color: #ff0000">*</span>:</label><input type='text' name='fast_ema' value={{ fast_ema }}> days<br>
@@ -29,7 +29,9 @@
                     <h3>RSI Parameters:</h3>
                     <label>RSI Buy Thresh:<span style="color: #ff0000">*</span>:</label><input type='text' name='rsi_buy_thresh' value={{ rsi_buy_thresh }}> /100<br>
                     <label>RSI Sell Thresh:<span style="color: #ff0000">*</span>:</label><input type='text' name='rsi_sell_thresh' value={{ rsi_sell_thresh }}> /100<br>
+                </div>
 
+                <div class="ivory_fourth">
                     <h3>ML Preprocess Parameters:</h3>
                     <label>Smoothing Filter:</label><select name='do_smooth'>
                     {% if do_smooth == True %}
@@ -45,34 +47,39 @@
                     <label>Days Ahead Prediction:<span style="color: #ff0000">*</span>:</label><input type='text' name='days_ahead' value={{ days_ahead }}><br>
                     <label>Days Before Evaluation:<span style="color: #ff0000">*</span>:</label><input type='text' name='days_evaluate' value={{ days_evaluate }}><br>
         			<label>Train Size<span style="color: #ff0000">*</span>:</label><input type='text' name='train_size' value={{ train_size }}> % data for training<br>
+                </div>
 
+                <div class="ivory_fourth">
                     <h3>SVR Parameters:</h3>
                     <label>SVM C<span style="color: #ff0000">*</span>:</label><input type='text' name='SVM_C' value={{ SVM_C }}> Inverse regulation<br>
-                    <label>SVM Kernel:<span style="color: #ff0000">*</span>:</label><input type='text' name='SVM_kernel' value={{ SVM_kernel }}> rbf/sigmoid/poly/linear<br>
+                    <label>SVM Kernel:<span style="color: #ff0000">*</span>:</label><input type='text' name='SVM_kernel' value={{ SVM_kernel }}><br>
+                    <label>Kernel Options:</label>rbf/sigmoid/poly/linear<br>
                     <label>SVM Degree:</label><input type='text' name='SVM_degree' value={{ SVM_degree }}> Used with poly<br>
                     <label>SVM Eps:</label><input type='text' name='SVM_eps' value={{ SVM_eps }}> Eps tube<br>
                     <br>
+                </div>
+            </div>
+            <input type='submit' value='Analyze/Predict'>
+        </form>
 
-        			<input type='submit' value='Analyze/Predict'>
-
-        		</form>
-
-    		</div>
+        <div class="half_column">
+            <div class="chart" id="scatter1">
+                <script>
+                    var graphs1 = {{analysisJSON | safe}};
+                    Plotly.plot('scatter1',graphs1,{});
+                </script>
+            </div>
         </div>
 
-        <div class="rightside_dependency_plot">
-
-            {{ script_p|safe }}
-            {{ div_p|safe }}
-
+        <div class="half_column">
+            <div class="chart" id="scatter2">
+                <script>
+                    var graphs2 = {{svrJSON | safe}};
+                    Plotly.plot('scatter2',graphs2,{});
+                </script>
+            </div>
         </div>
-
-<!--         <div class="rightside_dependency_plot">
-
-            {{ script_svr_p|safe }}
-            {{ div_svr_p|safe }}
-
-        </div> -->
 
     </body>
+
 {% endblock %}

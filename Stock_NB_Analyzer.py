@@ -80,42 +80,52 @@ class Stock_NB_Analyzer:
         
         count_report = "Total Positive Days: " + str(numPosDays) +\
             "\nTotal Negative Days: " + str(numNegDays) +\
-                "\nPerc Positive Days: %0.2f" % (numPosDays/(numNegDays + numPosDays)*100) +\
+                "\nPerc Positive Days: %0.2f" % (numPosDays/(numNegDays + numPosDays+0.001)*100) +\
                     "\n\nTotal Positive Tweets: " + str(numPosTweets) +\
                         "\nTotal Negative Tweets: " + str(numNegTweets) +\
-                            "\nPerc Positive Tweets: %0.2f" % (numPosTweets/(numNegTweets + numPosTweets)*100)
+                            "\nPerc Positive Tweets: %0.2f" % (numPosTweets/(numNegTweets + numPosTweets+0.001)*100)
         print(count_report)
         
         self.tweetResults_ = tweetResults
-        self.tweetsDF_ = tweetsDF_short
+        self.tweetsFilt_ = tweetsDF_short
         
         return count_report
         
     def create_classifier(self, trainSize, stopwordsList, useIDF, do_downsample, do_stat, numFeatures, doHTML=False):
-        totalTweets = list(self.tweetsDF_['Text'])
+        totalTweets = list(self.tweetsFilt_['Text'])
         self.clf_, self.count_vect_, self.tfTransformer_, report, most_inform, p\
         = create_NB_text_classifier(totalTweets, self.tweetResults_, trainSize, stopwordsList,\
                                     useIDF, do_downsample=do_downsample,
                                     do_stat=do_stat, n_features=numFeatures, doHTML=doHTML)
         return report, most_inform, p
             
-    def run_prediction(self, userName, geoLocation, distance, txtSearch, numMaxTweets, topTweets, lang, printAll):
+    def run_prediction(self, userName, txtSearch, numMaxTweets, lang, printAll):
         results, predictionTxt = predict_from_tweets(self.clf_, self.count_vect_, self.tfTransformer_,\
             txtSearch, userName, numMaxTweets, printAll)
         return results, predictionTxt
     
-    def plot_data(self, deltaInterval, isBokeh=False):
+    def plot_data(self, deltaInterval, doHTML=False):
         
-        unique_tweet_dates, num_daily_tweets = count_tweets_by_day(self.tweetsDF_)
+        unique_tweet_dates, num_daily_retweets = count_retweets_by_day(self.tweetsDF_)
         unique_tweet_dates = pd.to_datetime(unique_tweet_dates)
         
         dates = pd.to_datetime(self.stockData_['Date'])
         
-        bin_interval = 15
-        p_hist = plot_hist(self.tweetsDF_['Retweets'].values, bin_interval, title='Distribution of Retweets',\
-                           x_label='# of Retweets', y_label='Occurences', isBokeh=isBokeh)
+        p_hist = go.Figure()
+        p_hist.add_trace(go.Histogram(x=self.tweetsDF_['Retweets'].values))
+        p_hist.update_layout(title='Distribution of Retweets', xaxis_title='# of Retweets', yaxis_title='Occurrences')
+        if not doHTML:
+            plot(p_hist)
         
         stockClose = self.stockData_['Close'].values
+        
+        closeDataTrace = go.Scatter(x=dates, y=stockClose, name='Close Data', yaxis='y1')
+        twitterCountTrace = go.Scatter(x=unique_tweet_dates, y=num_daily_retweets, name='Retweets', yaxis='y2')
+        layout = go.Layout(title='Daily Close and Num Reweets', yaxis=dict(title='Close'), yaxis2=dict(title='Retweets',\
+                           overlaying='y', side='right'), xaxis=dict(title='Date'))
+        p = go.Figure(data=[closeDataTrace,twitterCountTrace], layout=layout)
+        if not doHTML:
+            plot(p)
         
         diffClose = np.diff(stockClose)
         diffClose = diffClose/stockClose[:-1]
@@ -124,12 +134,10 @@ class Stock_NB_Analyzer:
         diffInterval = diffInterval/stockClose[:-deltaInterval]
         diffIntDates = dates[:-deltaInterval]
         
-        x_values_plt1 = [dates, unique_tweet_dates]
-        y_values_plt1 = [stockClose, num_daily_tweets]
-        labels_plt1 = ['Close Data', 'Tweets']
-        title_plt1 = 'Daily Close'
-        xlabel_plt1 = 'Date'
-        ylabel_plt1 = 'Price'
+        p_delta = go.Figure()
+        p_delta.add_trace(go.Scatter(x=diffDates, y=diffClose, name='Daily'))
+        p_delta.add_trace(go.Scatter(x=diffIntDates, y=diffInterval, name='Interval'))
+        p_delta.update_layout(title='Change By Interval', xaxis_title='Date', yaxis_title='% Change')
         
         x_values_plt2 = [diffDates, diffIntDates]
         y_values_plt2 = [diffClose, diffInterval]
@@ -137,25 +145,19 @@ class Stock_NB_Analyzer:
         title_plt2 = 'Change By Interval'
         xlabel_plt2 = 'Date'
         ylabel_plt2 = '% Change'
-        
-        p = plot_values(x_values_plt1, y_values_plt1, labels_plt1, xlabel_plt1, ylabel_plt1, title_plt1, isDates=True, isBokeh=isBokeh)
-        p_delta = plot_values(x_values_plt2, y_values_plt2, labels_plt2, xlabel_plt2, ylabel_plt2, title_plt2, isDates=True, isBokeh=isBokeh)
-        
-        if isBokeh:
-            p = bokeh.layouts.row(p, p_delta, sizing_mode='stretch_both')
-        else:
-            p = "used matplotlib"
+        if not doHTML:
+            plot(p_delta)
         
         return p
     
 def Stock_NB_Grid_Search(NB_analyzer, trainSize, deltaInterval, changeFilter, useIDF, do_downsample, stopwordsList, do_stat=True, numFeatures=10, doHTML=True):
         
-    best_score = 0
+    best_score = -1000
     
     for i_int in deltaInterval:
         for i_change in changeFilter:
             count_report = NB_analyzer.correlate_tweets(i_int, i_change)
-            p = NB_analyzer.plot_data(i_int, isBokeh=doHTML)
+            p = NB_analyzer.plot_data(i_int, doHTML=doHTML)
             for i_train in trainSize:
                 for i_idf in useIDF:
                     for i_ds in do_downsample:

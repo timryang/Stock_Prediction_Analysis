@@ -39,12 +39,12 @@ C = 0.1
 eps = 1e-5
 degree = 3
 
-isBokeh = True
+doHTML = False
 
 #%% Execute
 
 ta_analyzer = Stock_TA_Analyzer()
 ta_analyzer.collect_data(ticker,start_date)
 ta_analyzer.compute_ta(slow_ema,fast_ema,signal_ema,rsi_sell_thresh,rsi_buy_thresh,\
-                   filter_win_length,filter_polyorder,isBokeh)
-ta_analyzer.preprocess_and_train(days_ahead,days_evaluate,train_size,do_smooth,kernel,C,eps,degree,isBokeh)
+                   filter_win_length,filter_polyorder,doHTML)
+ta_analyzer.preprocess_and_train(days_ahead,days_evaluate,train_size,do_smooth,kernel,C,eps,degree,doHTML)

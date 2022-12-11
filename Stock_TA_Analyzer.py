@@ -32,9 +32,11 @@ class Stock_TA_Analyzer():
         
     def load_data(self,stock_data):
         self.stock_data_ = stock_data
+        self.dates_ = np.array(pd.to_datetime(self.stock_data_['Date']))
+        self.close_data_ = np.array(self.stock_data_['Close'])
         
     def compute_ta(self,slow_ema=26,fast_ema=12,signal_ema=9,rsi_sell_thresh=70,rsi_buy_thresh=50,\
-                   filter_win_length=5,filter_polyorder=1,isBokeh=False):
+                   filter_win_length=5,filter_polyorder=1,doHTML=False):
         
         self.macd_obj_ = ta.trend.MACD(self.stock_data_['Close'],slow_ema,fast_ema,signal_ema)
         self.rsi_obj_ = ta.momentum.rsi(self.stock_data_['Close'])
@@ -61,28 +63,41 @@ class Stock_TA_Analyzer():
         x_date_line = [self.dates_[0],self.dates_[-1]]
         vert_point = np.min(self.close_data_)-0.01*np.min(self.close_data_)
         
-        macd_p = plot_values([self.dates_,self.dates_], [self.macd_obj_.macd(),self.macd_obj_.macd_signal()],\
-                             ['MACD','Signal'], 'Date', 'MACD', 'MACD', True, True, ['-'], isBokeh)
-        rsi_p = plot_values([self.dates_,x_date_line,x_date_line], [self.rsi_obj_,rsi_sell_line,rsi_buy_line],\
-                            ['RSI','Sell Thresh','Buy Thresh'], 'Date', 'RSI', 'RSI', True, True, ['-'], isBokeh)
-        obv_p = plot_values([self.dates_,self.dates_], [obv_obj,obv_smooth], ['OBV Raw','OBV Smooth'],\
-                            'Date', 'OBV', 'OBV', True, True, ['-'], isBokeh)
+        macd_p = go.Figure()
+        macd_p.add_trace(go.Scatter(x=self.dates_, y=self.macd_obj_.macd(), name='MACD'))
+        macd_p.add_trace(go.Scatter(x=self.dates_, y=self.macd_obj_.macd_signal(), name='MACD'))
+        macd_p.update_layout(title='MACD', xaxis_title='Date', yaxis_title='MACD', showlegend=True)
         
-        plt1_x = [self.dates_,self.dates_]+macd_buy+macd_sell+[rsi_buy,rsi_sell]
-        plt1_y = [self.close_data_,self.close_smooth_]+[vert_line]*(len(macd_buy)+len(macd_sell))\
-            +[np.tile(vert_point,len(rsi_buy)),np.tile(vert_point,len(rsi_sell))]
-        plt1_labels = ['Close Raw','Close Smooth']+['MACD Buy']*len(macd_buy)+['MACD Sell']*len(macd_sell)\
-            +['RSI Buy','RSI Sell']
-        if isBokeh:
-            plt1_lines = ['0solid','1solid']+['2dashed']*len(macd_buy)+['3dashed']*len(macd_sell)+['2dot','3dot']
-        else:
-            plt1_lines = ['C0-','C1-']+['g--']*len(macd_buy)+['r--']*len(macd_sell)+['go','ro']
-        analysis_p = plot_values(plt1_x, plt1_y, plt1_labels, 'Date', 'Close', 'Analysis', True, False, plt1_lines,isBokeh)
+        rsi_p = go.Figure()
+        rsi_p.add_trace(go.Scatter(x=self.dates_, y=self.rsi_obj_, name='RSI'))
+        rsi_p.add_trace(go.Scatter(x=x_date_line, y=rsi_sell_line, name='Sell Thresh'))
+        rsi_p.add_trace(go.Scatter(x=x_date_line, y=rsi_buy_line, name='Buy Thresh'))
+        rsi_p.update_layout(title='RSI', xaxis_title='Date', yaxis_title='RSI', showlegend=True)
+        
+        obv_p = go.Figure()
+        obv_p.add_trace(go.Scatter(x=self.dates_, y=obv_obj, name='OBV Raw'))
+        obv_p.add_trace(go.Scatter(x=self.dates_, y=obv_smooth, name='OBV Smooth'))
+        obv_p.update_layout(title='OBV', xaxis_title='Date', yaxis_title='OBV', showlegend=True)
+        
+        analysis_p= go.Figure()
+        analysis_p.add_trace(go.Scatter(x=self.dates_, y=self.close_data_, name='Close Raw'))
+        analysis_p.add_trace(go.Scatter(x=self.dates_, y=self.close_smooth_, name='Close Smooth'))
+        analysis_p.add_trace(go.Scatter(x=macd_buy[0], y=vert_line, name='MACD Buy', line={'dash': 'dash', 'color': 'green'}))
+        for i in range(len(macd_buy)-1):
+            analysis_p.add_trace(go.Scatter(x=macd_buy[i+1], y=vert_line, name='MACD Buy', line={'dash': 'dash', 'color': 'green'}, showlegend=False))
+        analysis_p.add_trace(go.Scatter(x=macd_sell[0], y=vert_line, name='MACD Sell', line={'dash': 'dash', 'color': 'red'}))
+        for i in range(len(macd_sell)-1):
+            analysis_p.add_trace(go.Scatter(x=macd_sell[i+1], y=vert_line, name='MACD Sell', line={'dash': 'dash', 'color': 'red'}, showlegend=False))
+        analysis_p.add_trace(go.Scatter(x=rsi_buy, y=np.tile(vert_point,len(rsi_buy)), name='RSI Buy', line={'color': 'green'}, mode='markers'))
+        analysis_p.add_trace(go.Scatter(x=rsi_sell, y=np.tile(vert_point,len(rsi_sell)), name='RSI Sell', line={'color': 'red'}, mode='markers'))
+        analysis_p.update_layout(title='Analysis', xaxis_title='Date', yaxis_title='Close', legend={'orientation': 'h', 'y': -0.2}, showlegend=True)
+        if not doHTML:
+            plot(analysis_p)
         
         return macd_p,rsi_p,obv_p,analysis_p
     
     def preprocess_and_train(self,days_ahead=4,days_evaluate=3,train_size=0.5,do_smooth=True,\
-                             kernel='rbf',C=0.1,eps=1e-5,degree=3,isBokeh=False):
+                             kernel='rbf',C=0.1,eps=1e-5,degree=3,doHTML=False):
         
         # Form data
         close_diff_perc_smooth = (self.close_smooth_[days_ahead:]-self.close_smooth_[:-days_ahead])/self.close_smooth_[:-days_ahead] #percent change
@@ -139,14 +154,14 @@ class Stock_TA_Analyzer():
         dates_diff = self.dates_[first_idx+days_evaluate+days_ahead-1:]
         dates_train = dates_diff[:int(m_size*train_size)]
         dates_test = dates_diff[int(m_size*train_size):]
-        x_values = [dates_diff,dates_diff,dates_train,dates_test,predict_dates]
-        y_values = [actual,output,train_output,test_output,predict_output]
-        labels = ['Actual','Output','Train','Test','Predict']
-        if isBokeh:
-            plt_lines = ['0dashed','1solid','3solid','3dashed','4solid']
-        else:
-            plt_lines = ['C0--','C1-','C3-','C3--','C4-']
-        p_svr = plot_values(x_values, y_values, labels, 'Date', 'Percent Change', 'SVR Results',\
-                    isDates=True, default_lines=False, lines=plt_lines, isBokeh=isBokeh)
+        
+        fig = go.Figure()
+        fig.add_trace(go.Scatter(x=dates_diff, y=actual, name='Actual'))
+        fig.add_trace(go.Scatter(x=dates_diff, y=output, name='Output'))
+        fig.add_trace(go.Scatter(x=dates_test, y=test_output, name='Test'))
+        fig.add_trace(go.Scatter(x=predict_dates, y=predict_output, name='Predict'))
+        fig.update_layout(title='SVR Results', xaxis_title='Date', yaxis_title='Percent Change', legend={'orientation': 'h', 'y': -0.2}, showlegend=True)
+        if not doHTML:
+            plot(fig)
             
-        return p_svr
+        return fig
